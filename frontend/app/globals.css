@@ -1,0 +1,449 @@
+@import "tailwindcss";
+
+/* ============================================
+   MODERN TELEMETRY DESIGN SYSTEM
+   F1 Predictor - Refined Engineering Aesthetic
+   ============================================ */
+
+:root {
+  /* === CORE PALETTE (Refined Engineering) === */
+  --bg-gunmetal: #1e1e24;
+  --bg-slate: #2b2d42;
+  --bg-slate-light: #383a4e;
+  
+  /* === TEXT COLORS === */
+  --text-ceramic: #f8f9fa;
+  --text-grey: #8d99ae;
+  --text-muted: #6b7280;
+  
+  /* === ACCENT COLORS === */
+  --accent-teal: #00b4d8;
+  --accent-teal-glow: rgba(0, 180, 216, 0.4);
+  --accent-teal-dim: rgba(0, 180, 216, 0.15);
+  
+  /* === SIGNAL COLORS === */
+  --signal-red: #e10600;
+  --signal-red-glow: rgba(225, 6, 0, 0.4);
+  --signal-amber: #f7b731;
+  --signal-amber-glow: rgba(247, 183, 49, 0.4);
+  --success-green: #00ff87;
+  --success-green-glow: rgba(0, 255, 135, 0.4);
+  
+  /* === GLASSMORPHISM (Updated) === */
+  --glass-bg: rgba(43, 45, 66, 0.85);
+  --glass-border: rgba(141, 153, 174, 0.15);
+  --glass-blur: 16px;
+  
+  /* === SHADOWS (Deep & Soft) === */
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-hover: 0 12px 48px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-glow-teal: 0 0 24px var(--accent-teal-glow);
+  --shadow-glow-red: 0 0 24px var(--signal-red-glow);
+  
+  /* === BORDER RADIUS (Rounded Modern) === */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  
+  /* === LEGACY COMPATIBILITY === */
+  --bg-asphalt: var(--bg-gunmetal);
+  --bg-carbon: var(--bg-slate);
+  --bg-carbon-light: var(--bg-slate-light);
+  --accent-cyan: var(--accent-teal);
+  --accent-cyan-glow: var(--accent-teal-glow);
+  --alert-red: var(--signal-red);
+  --alert-red-glow: var(--signal-red-glow);
+  --alert-amber: var(--signal-amber);
+  --alert-amber-glow: var(--signal-amber-glow);
+  --text-white: var(--text-ceramic);
+  --text-silver: var(--text-grey);
+}
+
+/* === BASE STYLES === */
+body {
+  background: var(--bg-gunmetal);
+  color: var(--text-grey);
+  font-family: var(--font-inter), 'Titillium Web', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* === FONT CLASSES (Data-Driven Typography) === */
+.font-heading {
+  font-family: var(--font-titillium), 'Titillium Web', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.font-orbitron {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  letter-spacing: 0.05em;
+}
+
+.font-mono-data {
+  font-family: var(--font-roboto-mono), 'Roboto Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.font-jetbrains {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* === GLASSMORPHISM CARD (Floating Panel Effect) === */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  box-shadow: var(--shadow-hover);
+  border-color: rgba(141, 153, 174, 0.25);
+  transform: translateY(-2px);
+}
+
+/* === TELEMETRY PANEL (Data Cards) === */
+.telemetry-panel {
+  background: linear-gradient(145deg, var(--bg-slate) 0%, rgba(43, 45, 66, 0.9) 100%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.telemetry-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-teal), transparent 70%);
+  opacity: 0.8;
+}
+
+/* === PIT BOARD CARD === */
+.pit-board {
+  background: linear-gradient(145deg, var(--bg-slate) 0%, var(--bg-gunmetal) 100%);
+  border: 1px solid var(--glass-border);
+  border-left: 4px solid var(--accent-teal);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.pit-board::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent-teal), transparent);
+}
+
+.pit-board-active {
+  border-left-color: var(--success-green);
+  animation: activePulse 2s ease-in-out infinite;
+}
+
+@keyframes activePulse {
+  0%, 100% { box-shadow: var(--shadow-card), 0 0 0 0 rgba(0, 255, 135, 0.3); }
+  50% { box-shadow: var(--shadow-card), 0 0 24px 0 rgba(0, 255, 135, 0.3); }
+}
+
+/* === BUTTONS (Refined) === */
+.btn-primary {
+  background: linear-gradient(135deg, var(--signal-red) 0%, #c20500 100%);
+  color: var(--text-ceramic);
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(225, 6, 0, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  box-shadow: var(--shadow-glow-red);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--bg-slate-light);
+  color: var(--text-ceramic);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-slate);
+  border-color: var(--accent-teal);
+}
+
+.btn-teal {
+  background: linear-gradient(135deg, var(--accent-teal) 0%, #0096c7 100%);
+  color: #000;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-teal:hover {
+  box-shadow: var(--shadow-glow-teal);
+  transform: translateY(-1px);
+}
+
+/* === COUNTDOWN STYLES (Data Display) === */
+.countdown-digit {
+  font-family: var(--font-roboto-mono), 'Roboto Mono', monospace;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown-normal {
+  color: var(--accent-teal);
+  text-shadow: 0 0 20px var(--accent-teal-glow);
+}
+
+.countdown-warning {
+  color: var(--signal-amber);
+  text-shadow: 0 0 20px var(--signal-amber-glow);
+}
+
+.countdown-critical {
+  color: var(--signal-red);
+  text-shadow: 0 0 20px var(--signal-red-glow);
+  animation: criticalPulse 1s ease-in-out infinite;
+}
+
+@keyframes criticalPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+/* === METAL SHUTTER (LOCKED STATE) === */
+.shutter-locked {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+.shutter-locked::after {
+  content: 'LOCKED';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--bg-slate),
+    var(--bg-slate) 10px,
+    var(--bg-gunmetal) 10px,
+    var(--bg-gunmetal) 20px
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-titillium), 'Titillium Web', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--signal-red);
+  letter-spacing: 0.3em;
+  animation: shutterSlam 0.3s ease-out;
+}
+
+@keyframes shutterSlam {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(0); }
+}
+
+/* === DELTA BAR (Rivalry Progress) === */
+.delta-bar {
+  height: 10px;
+  background: var(--bg-gunmetal);
+  border-radius: var(--radius-full);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.delta-positive {
+  background: linear-gradient(90deg, var(--success-green), #00cc6a);
+  box-shadow: 0 0 10px var(--success-green-glow);
+  border-radius: var(--radius-full);
+}
+
+.delta-negative {
+  background: linear-gradient(90deg, var(--signal-red), #c20500);
+  box-shadow: 0 0 10px var(--signal-red-glow);
+  border-radius: var(--radius-full);
+}
+
+/* === TEAM RADIO TOAST === */
+.team-radio {
+  background: linear-gradient(145deg, var(--bg-slate) 0%, var(--bg-gunmetal) 100%);
+  border: 1px solid var(--accent-teal);
+  border-left: 4px solid var(--accent-teal);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.5rem;
+  font-family: var(--font-roboto-mono), 'Roboto Mono', monospace;
+  position: relative;
+  box-shadow: var(--shadow-card);
+}
+
+.team-radio::before {
+  content: '📻';
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* === SCROLLBAR (Refined) === */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-gunmetal);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-slate-light);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-teal);
+}
+
+/* === HORIZONTAL SCROLL (Telemetry Track) === */
+.telemetry-track {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding: 1rem 0;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.telemetry-track::-webkit-scrollbar {
+  height: 4px;
+}
+
+.telemetry-track > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* === FORM INPUTS (Refined) === */
+input, select, textarea {
+  background: var(--bg-gunmetal);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--text-ceramic);
+  transition: all 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent-teal);
+  box-shadow: 0 0 0 3px var(--accent-teal-dim);
+}
+
+/* === UTILITY CLASSES === */
+.text-glow-teal {
+  text-shadow: 0 0 12px var(--accent-teal-glow);
+}
+
+.text-glow-red {
+  text-shadow: 0 0 12px var(--signal-red-glow);
+}
+
+.border-glow-teal {
+  box-shadow: var(--shadow-glow-teal);
+}
+
+.border-glow-red {
+  box-shadow: var(--shadow-glow-red);
+}
+
+/* === SELECTION === */
+::selection {
+  background: var(--accent-teal);
+  color: var(--bg-gunmetal);
+}
+
+/* === DATA LABELS === */
+.data-label {
+  font-family: var(--font-titillium), 'Titillium Web', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-grey);
+}
+
+.data-value {
+  font-family: var(--font-roboto-mono), 'Roboto Mono', monospace;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-ceramic);
+}
+
+/* === SECTION DIVIDER === */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
+}
+
+/* === BADGE STYLES === */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-full);
+}
+
+.badge-teal {
+  background: var(--accent-teal-dim);
+  color: var(--accent-teal);
+  border: 1px solid rgba(0, 180, 216, 0.3);
+}
+
+.badge-red {
+  background: rgba(225, 6, 0, 0.15);
+  color: var(--signal-red);
+  border: 1px solid rgba(225, 6, 0, 0.3);
+}
+
+.badge-amber {
+  background: rgba(247, 183, 49, 0.15);
+  color: var(--signal-amber);
+  border: 1px solid rgba(247, 183, 49, 0.3);
+}
+
+.badge-green {
+  background: rgba(0, 255, 135, 0.15);
+  color: var(--success-green);
+  border: 1px solid rgba(0, 255, 135, 0.3);
+}
