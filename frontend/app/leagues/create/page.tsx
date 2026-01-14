@@ -38,11 +38,12 @@ export default function CreateLeaguePage() {
         return;
       }
 
+      const safeToken = session.access_token.replace(/[\n\r\s]/g, '');
       const response = await fetch(`${config.apiUrl}/leagues`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
+          "Authorization": `Bearer ${safeToken}`
         },
         body: JSON.stringify({
           name: name.trim(),
