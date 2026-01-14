@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Optional, List
 import os
 import re
-from .scoring import calculate_points
+from scoring import calculate_points
 
 # Rate limiting imports
 from slowapi import Limiter, _rate_limit_exceeded_handler
