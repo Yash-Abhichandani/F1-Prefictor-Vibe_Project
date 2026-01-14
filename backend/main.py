@@ -23,7 +23,15 @@ supabase: Client = create_client(url, key)
 # Rate limiter setup
 limiter = Limiter(key_func=get_remote_address)
 
-app = FastAPI(title="F1 Predictor API", version="2.3.0")
+# Configure root path for Vercel/proxies
+# If running through a proxy/rewrite that strips nothing but forwards to /api, we need to know.
+# However, Vercel Python runtime usually receives the full path.
+# If the request is /api/races, and route is /races, we need root_path="/api".
+app = FastAPI(
+    title="F1 Predictor API", 
+    version="2.3.0",
+    root_path="/api" if os.environ.get("VERCEL") else ""
+)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -37,7 +45,7 @@ if "http://127.0.0.1:3000" not in ALLOWED_ORIGINS:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],  # Allow all for debugging/production flexibility
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],

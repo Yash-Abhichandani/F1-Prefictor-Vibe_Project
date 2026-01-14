@@ -59,8 +59,14 @@ export default function CreateLeaguePage() {
       } else {
         setError(data.detail || "Failed to create league");
       }
-    } catch (err) {
-      setError("Network error. Please try again.");
+    } catch (err: any) {
+      console.error("League creation error:", err);
+      // If it's a JSON parse error, it might be a 404/500 HTML page
+      if (err instanceof SyntaxError) {
+        setError("Server error (Invalid JSON response). Check backend logs.");
+      } else {
+        setError(err.message || "Network error. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
