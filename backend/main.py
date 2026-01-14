@@ -27,11 +27,24 @@ limiter = Limiter(key_func=get_remote_address)
 # If running through a proxy/rewrite that strips nothing but forwards to /api, we need to know.
 # However, Vercel Python runtime usually receives the full path.
 # If the request is /api/races, and route is /races, we need root_path="/api".
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
 app = FastAPI(
     title="F1 Predictor API", 
     version="2.3.0",
     root_path="/api" if os.environ.get("VERCEL") else ""
 )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # Log the detailed validation error
+    print(f"Validation Error at {request.url}: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": f"Validation Error: {exc.errors()}"},
+    )
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

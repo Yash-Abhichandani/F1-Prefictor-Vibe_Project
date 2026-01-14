@@ -57,7 +57,10 @@ export default function CreateLeaguePage() {
       if (response.ok) {
         router.push(`/leagues/${data.league.id}`);
       } else {
-        setError(data.detail || "Failed to create league");
+        const errorMsg = typeof data.detail === 'string' 
+          ? data.detail 
+          : JSON.stringify(data.detail);
+        setError(errorMsg || "Failed to create league");
       }
     } catch (err: any) {
       console.error("League creation error:", err);
