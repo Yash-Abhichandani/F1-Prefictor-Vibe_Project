@@ -38,10 +38,27 @@ export default function CreateLeaguePage() {
         return;
       }
 
-      const safeToken = session.access_token.replace(/[\n\r\s]/g, '');
-      const targetUrl = `${config.apiUrl}/leagues`;
+      // ROBUST FIX:
+      // 1. Aggressively sanitize token to ONLY allow valid JWT characters (base64url safe).
+      //    This removes ANY invisible char, non-breaking space, or emoji that crashes Headers.
+      const safeToken = session.access_token.replace(/[^A-Za-z0-9._-]/g, '');
       
-      console.log(`Attempting fetch to: [${targetUrl}] with token len: ${safeToken.length}`);
+      if (!safeToken) {
+        throw new Error("Authentication token is invalid (empty after sanitization).");
+      }
+
+      // 2. Force Absolute URL.
+      //    Some browsers/proxies choke on relative URLs in specific contexts.
+      //    We construct a full URL using the guaranteed window.location.origin.
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const apiPath = config.apiUrl.startsWith('/') ? config.apiUrl : `/${config.apiUrl}`;
+      
+      // If config.apiUrl is already http (localhost), use it. If it's relative (/api), append to origin.
+      const targetUrl = config.apiUrl.startsWith('http') 
+        ? `${config.apiUrl}/leagues`
+        : `${origin}${apiPath}/leagues`;
+      
+      console.log(`[Robust Fetch] URL: ${targetUrl} | TokenLen: ${safeToken.length}`);
 
       const response = await fetch(targetUrl, {
         method: "POST",
@@ -67,7 +84,6 @@ export default function CreateLeaguePage() {
           status: response.status,
           statusText: response.statusText,
           url: targetUrl,
-          tokenLen: safeToken.length,
           data: data
         };
         console.log("Debug Context:", context);
@@ -82,11 +98,11 @@ export default function CreateLeaguePage() {
       console.error("League creation error:", err);
       // Detailed catch with visible variables
       let msg = err.message || "Network Error";
-      // Try to determine if it's the URL or Token
-      const debugInfo = `URL: "${config.apiUrl}/leagues"`;
-      if (err instanceof SyntaxError) msg = "JSON Parse Error";
+      if (err instanceof SyntaxError) msg = "JSON Parse Error (Response might be HTML/404)";
       
-      setError(`[Client Exception] ${msg} | ${debugInfo}`);
+      // Show the URL we TRIED to hit, so we know if it's absolute or relative
+      const triedUrl = config.apiUrl.startsWith('http') ? "Localhost Link" : "Production Link";
+      setError(`[Client Exception] ${msg} | ${triedUrl}`);
     } finally {
       setLoading(false);
     }
