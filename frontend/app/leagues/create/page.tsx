@@ -39,7 +39,11 @@ export default function CreateLeaguePage() {
       }
 
       const safeToken = session.access_token.replace(/[\n\r\s]/g, '');
-      const response = await fetch(`${config.apiUrl}/leagues`, {
+      const targetUrl = `${config.apiUrl}/leagues`;
+      
+      console.log(`Attempting fetch to: [${targetUrl}] with token len: ${safeToken.length}`);
+
+      const response = await fetch(targetUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -62,6 +66,8 @@ export default function CreateLeaguePage() {
         const context = {
           status: response.status,
           statusText: response.statusText,
+          url: targetUrl,
+          tokenLen: safeToken.length,
           data: data
         };
         console.log("Debug Context:", context);
@@ -74,10 +80,13 @@ export default function CreateLeaguePage() {
       }
     } catch (err: any) {
       console.error("League creation error:", err);
-      // Detailed catch
+      // Detailed catch with visible variables
       let msg = err.message || "Network Error";
-      if (err instanceof SyntaxError) msg = "JSON Parse Error (Response might be HTML/404)";
-      setError(`[Client Exception] ${msg}`);
+      // Try to determine if it's the URL or Token
+      const debugInfo = `URL: "${config.apiUrl}/leagues"`;
+      if (err instanceof SyntaxError) msg = "JSON Parse Error";
+      
+      setError(`[Client Exception] ${msg} | ${debugInfo}`);
     } finally {
       setLoading(false);
     }
