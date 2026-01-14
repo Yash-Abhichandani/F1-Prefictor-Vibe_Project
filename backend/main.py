@@ -525,8 +525,14 @@ def create_league(request: Request, league_input: LeagueCreateInput, user_id: st
         }).execute()
         
         return {"message": "League created successfully", "league": new_league.data[0]}
+        return {"message": "League created successfully", "league": new_league.data[0]}
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        print(f"Create League Error: {str(e)}") # Log for Vercel
+        # Try to extract more info if available
+        detail = str(e)
+        if hasattr(e, 'message'):
+            detail = f"{e.message} (Code: {getattr(e, 'code', 'N/A')})"
+        raise HTTPException(status_code=400, detail=f"Failed to create league: {detail}")
 
 @app.put("/leagues/{league_id}")
 @limiter.limit("20/minute")
