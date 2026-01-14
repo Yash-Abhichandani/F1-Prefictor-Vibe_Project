@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { config } from "../../../lib/config";
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,7 +38,7 @@ export default function CreateLeaguePage() {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues`, {
+      const response = await fetch(`${config.apiUrl}/leagues`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

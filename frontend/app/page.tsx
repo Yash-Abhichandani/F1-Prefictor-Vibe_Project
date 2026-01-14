@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
+import { config } from "../lib/config";
 import LaunchSequence from "./components/LaunchSequence";
 import RivalryCard from "./components/RivalryCard";
 
@@ -81,7 +82,7 @@ export default function Home() {
         
         // User Standings (Local API)
         try {
-           const resUsers = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'}/standings`);
+           const resUsers = await fetch(`${config.apiUrl}/standings`);
            if (resUsers.ok) {
              const dataUsers = await resUsers.json();
              setUserStandings(dataUsers);

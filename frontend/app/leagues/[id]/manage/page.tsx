@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { config } from "../../../../lib/config";
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -126,7 +127,7 @@ export default function LeagueManagePage() {
     if (!session) return;
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/predictions/${raceId}`,
+      `${config.apiUrl}/leagues/${leagueId}/predictions/${raceId}`,
       {
         headers: { Authorization: `Bearer ${session.access_token}` }
       }
@@ -143,7 +144,7 @@ export default function LeagueManagePage() {
     if (!session) return;
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/grading-queue`,
+      `${config.apiUrl}/leagues/${leagueId}/grading-queue`,
       {
         headers: { Authorization: `Bearer ${session.access_token}` }
       }
@@ -161,7 +162,7 @@ export default function LeagueManagePage() {
     if (!session) return;
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/members`,
+      `${config.apiUrl}/leagues/${leagueId}/members`,
       {
         headers: { Authorization: `Bearer ${session.access_token}` }
       }
@@ -178,7 +179,7 @@ export default function LeagueManagePage() {
     if (!session) return;
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/activity`,
+      `${config.apiUrl}/leagues/${leagueId}/activity`,
       {
         headers: { Authorization: `Bearer ${session.access_token}` }
       }
@@ -213,7 +214,7 @@ export default function LeagueManagePage() {
     if (!session) return;
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/grade`,
+      `${config.apiUrl}/leagues/${leagueId}/grade`,
       {
         method: "POST",
         headers: {
@@ -244,7 +245,7 @@ export default function LeagueManagePage() {
     if (!session) return;
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/sync-points`,
+      `${config.apiUrl}/leagues/${leagueId}/sync-points`,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}` }

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
+import { config } from "../../lib/config";
 import { useRouter } from "next/navigation";
 import { DRIVERS_2026 } from "../lib/drivers";
 
@@ -76,7 +77,7 @@ export default function AdminPage() {
         // Fetch predictions with auth header
         const fetchPredictions = async () => {
             const authHeaders = await getAuthHeader();
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'}/admin/predictions/${selectedRaceId}`, {
+            const res = await fetch(`${config.apiUrl}/admin/predictions/${selectedRaceId}`, {
                 headers: authHeaders
             });
             const data = await res.json();
@@ -115,7 +116,7 @@ export default function AdminPage() {
     const newScore = currentScore + addPoints;
     setUserPredictions(prev => prev.map(p => p.id === predId ? { ...p, manual_score: newScore } : p));
     const authHeaders = await getAuthHeader();
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'}/admin/grade`, {
+    await fetch(`${config.apiUrl}/admin/grade`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ prediction_id: predId, manual_score: newScore })
@@ -125,7 +126,7 @@ export default function AdminPage() {
   const handleResetGrade = async (predId: number) => {
     setUserPredictions(prev => prev.map(p => p.id === predId ? { ...p, manual_score: 0 } : p));
     const authHeaders = await getAuthHeader();
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'}/admin/grade`, {
+    await fetch(`${config.apiUrl}/admin/grade`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ prediction_id: predId, manual_score: 0 })
@@ -140,7 +141,7 @@ export default function AdminPage() {
 
     try {
         const authHeaders = await getAuthHeader();
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'}/admin/settle`, {
+        const response = await fetch(`${config.apiUrl}/admin/settle`, {
             method: "POST",
             headers: { "Content-Type": "application/json", ...authHeaders },
             body: JSON.stringify({

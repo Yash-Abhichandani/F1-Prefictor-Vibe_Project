@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
+import { config } from "../../lib/config";
 import Link from "next/link";
 
 export default function ResultsPage() {
@@ -17,7 +18,7 @@ export default function ResultsPage() {
     const fetchStandings = async () => {
       try {
         // Fetch from our new Python endpoint that includes "Last 3 Races" logic
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'}/standings`);
+        const response = await fetch(`${config.apiUrl}/standings`);
         
         if (!response.ok) {
           throw new Error(`Server responded with status ${response.status}`);

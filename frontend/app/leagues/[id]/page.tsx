@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { config } from "../../../lib/config";
 import LeagueChat from "../../components/LeagueChat";
 
 const supabase = createBrowserClient(
@@ -63,7 +64,7 @@ export default function LeagueDetailPage() {
 
       setCurrentUserId(session.user.id);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/standings`, {
+      const response = await fetch(`${config.apiUrl}/leagues/${leagueId}/standings`, {
         headers: {
           "Authorization": `Bearer ${session.access_token}`
         }
@@ -107,7 +108,7 @@ export default function LeagueDetailPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/invite`, {
+      const response = await fetch(`${config.apiUrl}/leagues/${leagueId}/invite`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -139,7 +140,7 @@ export default function LeagueDetailPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/leave`, {
+      const response = await fetch(`${config.apiUrl}/leagues/${leagueId}/leave`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session.access_token}`
@@ -164,7 +165,7 @@ export default function LeagueDetailPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+      const response = await fetch(`${config.apiUrl}/leagues/${leagueId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${session.access_token}`

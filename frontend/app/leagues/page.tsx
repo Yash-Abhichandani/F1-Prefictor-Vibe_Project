@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
+import { config } from "../../lib/config";
 
 // Initialize Supabase client
 const supabase = createBrowserClient(
@@ -52,7 +53,7 @@ export default function LeaguesPage() {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues`, {
+      const response = await fetch(`${config.apiUrl}/leagues`, {
         headers: {
           "Authorization": `Bearer ${session.access_token}`
         }
@@ -75,7 +76,7 @@ export default function LeaguesPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invites`, {
+      const response = await fetch(`${config.apiUrl}/invites`, {
         headers: {
           "Authorization": `Bearer ${session.access_token}`
         }
@@ -105,7 +106,7 @@ export default function LeaguesPage() {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/join`, {
+      const response = await fetch(`${config.apiUrl}/leagues/join`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -135,7 +136,7 @@ export default function LeaguesPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invites/${inviteId}/accept`, {
+      const response = await fetch(`${config.apiUrl}/invites/${inviteId}/accept`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session.access_token}`
@@ -157,7 +158,7 @@ export default function LeaguesPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invites/${inviteId}/decline`, {
+      await fetch(`${config.apiUrl}/invites/${inviteId}/decline`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session.access_token}`
