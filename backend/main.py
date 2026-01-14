@@ -539,7 +539,6 @@ def create_league(request: Request, league_input: LeagueCreateInput, user_id: st
         }).execute()
         
         return {"message": "League created successfully", "league": new_league.data[0]}
-        return {"message": "League created successfully", "league": new_league.data[0]}
     except Exception as e:
         print(f"Create League Error: {str(e)}") # Log for Vercel
         # Try to extract more info if available
