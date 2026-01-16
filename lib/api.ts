@@ -66,7 +66,7 @@ export async function apiCall<T = unknown>(
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const url = `${baseUrl}${cleanEndpoint}`;
     
-    console.log(`[API] ${method} ${url}`);
+
     
     // 2. Build headers safely
     const headers: Record<string, string> = {
