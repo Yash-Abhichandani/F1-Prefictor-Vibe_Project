@@ -11,12 +11,12 @@ export default function TelemetryLoader({ onComplete }: TelemetryLoaderProps) {
   const [progress, setProgress] = useState(0);
 
   const steps = [
-    { text: "BIOS_CHECK_OK", delay: 300 },
-    { text: "ESTABLISHING_UPLINK...", delay: 800 },
-    { text: "CALIBRATING_SENSORS", delay: 600 },
-    { text: "FETCHING_2026_GRID_DATA...", delay: 1000 },
-    { text: "SYNCING_RACE_CONTROL", delay: 500 },
-    { text: "SYSTEM_READY", delay: 400 }
+    { text: "BIOS_CHECK_OK", delay: 100 },
+    { text: "ESTABLISHING_UPLINK...", delay: 400 },
+    { text: "CALIBRATING_SENSORS", delay: 300 },
+    { text: "FETCHING_2026_GRID_DATA...", delay: 400 },
+    { text: "SYNCING_RACE_CONTROL", delay: 200 },
+    { text: "SYSTEM_READY", delay: 200 }
   ];
 
   useEffect(() => {
