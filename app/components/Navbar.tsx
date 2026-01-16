@@ -80,17 +80,33 @@ export default function Navbar() {
           <div className="flex justify-between items-center h-16">
             
             {/* Left: Logo */}
-            <Link href="/" className="flex items-center group">
-              {/* Logo - properly sized for navbar */}
-              <div className="relative h-10 w-32 flex items-center">
-                <Image 
-                  src="/logo.png" 
-                  alt="F1 Apex Predictions" 
-                  fill
-                  sizes="128px"
-                  className="object-contain object-left"
-                  priority
-                />
+            <Link href="/" className="flex items-center gap-3 group">
+              {/* Circular Logo with Premium Ring */}
+              <div className="relative">
+                {/* Outer glow ring */}
+                <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-[var(--f1-red)] via-[var(--accent-gold)] to-[var(--f1-red)] opacity-50 blur-sm group-hover:opacity-80 group-hover:blur-md transition-all duration-500" />
+                
+                {/* Logo container */}
+                <div className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-[var(--f1-red)]/60 group-hover:border-[var(--f1-red)] shadow-[0_0_20px_rgba(220,38,38,0.3)] group-hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] transition-all duration-300">
+                  <Image 
+                    src="/logo.png" 
+                    alt="F1 Apex" 
+                    fill
+                    sizes="44px"
+                    className="object-cover scale-150"
+                    priority
+                  />
+                </div>
+              </div>
+              
+              {/* Brand Text */}
+              <div className="flex flex-col">
+                <span className="text-lg font-bold tracking-tight text-white group-hover:text-[var(--f1-red)] transition-colors duration-300">
+                  F1 APEX
+                </span>
+                <span className="text-[9px] font-semibold tracking-[0.2em] text-[var(--accent-gold)]/80 uppercase">
+                  Predictions
+                </span>
               </div>
             </Link>
 
