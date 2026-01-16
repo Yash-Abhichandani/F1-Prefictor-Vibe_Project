@@ -7,10 +7,5 @@
       "source": "/api/:path*",
       "destination": "/api/index.py"
     }
-  ],
-  "functions": {
-    "api/**/*.py": {
-      "runtime": "python3.12"
-    }
-  }
+  ]
 }
