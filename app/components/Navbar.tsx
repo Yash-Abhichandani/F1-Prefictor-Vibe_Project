@@ -81,25 +81,18 @@ export default function Navbar() {
             
             {/* Left: Logo */}
             <Link href="/" className="flex items-center gap-3 group">
-              {/* Logo Container */}
-              <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-[var(--accent-gold)]/40 shadow-lg group-hover:shadow-[var(--shadow-glow-gold)] transition-all duration-300 group-hover:scale-105">
+              {/* Premium Logo Container */}
+              <div className="relative h-12 w-auto flex items-center">
                 <Image 
-                  src="/logo.jpg" 
-                  alt="F1 Apex Logo" 
-                  fill
-                  sizes="40px"
-                  className="object-cover"
+                  src="/logo.png" 
+                  alt="F1 Apex Predictions" 
+                  width={180}
+                  height={48}
+                  className="object-contain drop-shadow-[0_0_12px_rgba(220,38,38,0.4)] group-hover:drop-shadow-[0_0_20px_rgba(220,38,38,0.6)] transition-all duration-500"
+                  priority
                 />
-              </div>
-              
-              {/* Text */}
-              <div className="flex flex-col">
-                <span className="text-lg font-bold tracking-tight text-white group-hover:text-[var(--accent-gold)] transition-colors duration-300">
-                  F1 APEX
-                </span>
-                <span className="text-[10px] font-medium tracking-[0.25em] text-[var(--text-muted)] uppercase">
-                  Command Center
-                </span>
+                {/* Subtle glow effect on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[var(--f1-red)]/0 via-[var(--f1-red)]/5 to-[var(--f1-red)]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg" />
               </div>
             </Link>
 
