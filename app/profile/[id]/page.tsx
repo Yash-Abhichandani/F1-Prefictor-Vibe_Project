@@ -447,7 +447,15 @@ export default function UserProfilePage() {
 
                          {/* History */}
                          <GlassCard className="p-6">
-                            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><span>📜</span> HISTORY</h3>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-bold text-white flex items-center gap-2"><span>📜</span> HISTORY</h3>
+                                <button 
+                                    onClick={() => router.push('/history')}
+                                    className="text-xs font-bold text-[var(--accent-cyan)] hover:text-white uppercase tracking-wider flex items-center gap-1 transition-colors"
+                                >
+                                    View Logic Logs →
+                                </button>
+                            </div>
                             <div className="space-y-4">
                                 {predictions.length > 0 ? predictions.map((pred, i) => (
                                     <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-[var(--bg-onyx)] border border-[var(--glass-border)]">
