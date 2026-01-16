@@ -1,5 +1,4 @@
 {
-  "outputDirectory": ".next",
   "rewrites": [
     {
       "source": "/api/:path*",
