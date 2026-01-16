@@ -1,135 +1,107 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 interface TelemetryLoaderProps {
-  size?: 'sm' | 'md' | 'lg';
-  label?: string;
+  onComplete?: () => void;
 }
 
-export default function TelemetryLoader({ size = 'md', label = 'LOADING' }: TelemetryLoaderProps) {
-  const sizeClasses = {
-    sm: 'h-8 gap-1',
-    md: 'h-16 gap-2',
-    lg: 'h-24 gap-3'
-  };
+export default function TelemetryLoader({ onComplete }: TelemetryLoaderProps) {
+  const [bootStep, setBootStep] = useState(0);
+  const [progress, setProgress] = useState(0);
 
-  const barClasses = {
-    sm: 'w-1',
-    md: 'w-1.5',
-    lg: 'w-2'
-  };
+  const steps = [
+    { text: "BIOS_CHECK_OK", delay: 300 },
+    { text: "ESTABLISHING_UPLINK...", delay: 800 },
+    { text: "CALIBRATING_SENSORS", delay: 600 },
+    { text: "FETCHING_2026_GRID_DATA...", delay: 1000 },
+    { text: "SYNCING_RACE_CONTROL", delay: 500 },
+    { text: "SYSTEM_READY", delay: 400 }
+  ];
 
-  return (
-    <div className="flex flex-col items-center gap-4">
-      {/* Telemetry Bars */}
-      <div className={`flex items-end ${sizeClasses[size]}`}>
-        {[...Array(12)].map((_, i) => (
-          <div
-            key={i}
-            className={`${barClasses[size]} bg-[var(--accent-cyan)] rounded-t animate-telemetry-bar`}
-            style={{
-              animationDelay: `${i * 0.1}s`,
-              height: '30%'
-            }}
-          />
-        ))}
-      </div>
+  useEffect(() => {
+    let currentStep = 0;
+    
+    // Total estimated duration to sync progress bar roughly with steps
+    const totalDuration = steps.reduce((acc, step) => acc + step.delay, 0) + 500; 
+    const startTime = Date.now();
+
+    // Progress Bar Animation
+    const progressInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const calculatedProgress = Math.min((elapsed / totalDuration) * 100, 100);
+      setProgress(calculatedProgress);
       
-      {/* Label */}
-      {label && (
-        <span className="font-mono text-xs text-[var(--accent-cyan)] tracking-widest uppercase animate-pulse">
-          {label}...
-        </span>
-      )}
+      if (calculatedProgress >= 100) {
+        clearInterval(progressInterval);
+      }
+    }, 16);
 
-      {/* Animation Styles */}
-      <style jsx>{`
-        @keyframes telemetry-bar {
-          0%, 100% { 
-            height: 30%; 
-            background-color: var(--accent-cyan);
-          }
-          25% { 
-            height: 100%; 
-            background-color: var(--success-green);
-          }
-          50% { 
-            height: 50%; 
-            background-color: var(--accent-cyan);
-          }
-          75% { 
-            height: 80%; 
-            background-color: var(--accent-lime);
-          }
-        }
-        .animate-telemetry-bar {
-          animation: telemetry-bar 1.5s ease-in-out infinite;
-        }
-      `}</style>
-    </div>
-  );
-}
+    // Step Sequencer
+    const runSteps = async () => {
+      for (let i = 0; i < steps.length; i++) {
+        setBootStep(i);
+        await new Promise(r => setTimeout(r, steps[i].delay));
+      }
+      // Finished
+      setTimeout(() => {
+        onComplete?.();
+      }, 500);
+    };
 
-// Alternative: Racing Pulse Loader
-export function RacingPulseLoader() {
+    runSteps();
+
+    return () => clearInterval(progressInterval);
+  }, []);
+
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="relative w-48 h-12">
-        {/* Background Track */}
-        <div className="absolute inset-0 bg-[var(--bg-carbon)] rounded-full overflow-hidden">
-          {/* Racing Pulse */}
-          <div className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-[var(--accent-cyan)] to-transparent animate-racing-pulse" />
+    <div className="fixed inset-0 z-[100] bg-[var(--bg-void)] flex flex-col items-center justify-center font-mono text-[var(--text-primary)]">
+      
+      {/* Background Grid Illusion (Subtle) */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(20,20,20,0)_1px,transparent_1px),linear-gradient(90deg,rgba(20,20,20,0)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 pointer-events-none"></div>
+
+      <div className="w-full max-w-md p-6 relative">
+        {/* Terminal Window Header */}
+        <div className="flex justify-between items-center mb-6 text-[10px] text-[var(--text-muted)] tracking-widest uppercase border-b border-white/10 pb-2">
+            <span>F1-APEX-OS v2.6.0</span>
+            <span className="animate-pulse text-[var(--status-success)]">● ONLINE</span>
         </div>
-        
-        {/* Grid Lines */}
-        <div className="absolute inset-0 flex justify-between px-4 items-center">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="w-px h-4 bg-[var(--grid-line)]" />
-          ))}
+
+        {/* Boot Sequence Log */}
+        <div className="h-48 flex flex-col justify-end mb-8 space-y-1 font-mono text-xs md:text-sm">
+            {steps.map((step, index) => {
+                if (index > bootStep) return null;
+                const isCurrent = index === bootStep;
+                return (
+                    <div key={index} className={`flex items-center gap-3 ${isCurrent ? 'text-[var(--accent-cyan)]' : 'text-white/40'}`}>
+                        <span className="opacity-50 text-[10px] w-12">{`00:${20 + index * 14}`}</span>
+                        <span>{step.text}</span>
+                        {isCurrent && <span className="w-2 h-4 bg-[var(--accent-cyan)] animate-pulse ml-1 inline-block align-middle"/>}
+                        {!isCurrent && <span className="text-[var(--status-success)] ml-auto">[OK]</span>}
+                    </div>
+                )
+            })}
         </div>
-      </div>
-      
-      <span className="font-mono text-xs text-[var(--accent-cyan)] tracking-widest uppercase">
-        ANALYZING TELEMETRY...
-      </span>
 
-      <style jsx>{`
-        @keyframes racing-pulse {
-          0% { transform: translateX(-200%); }
-          100% { transform: translateX(400%); }
-        }
-        .animate-racing-pulse {
-          animation: racing-pulse 1.5s ease-in-out infinite;
-        }
-      `}</style>
-    </div>
-  );
-}
+        {/* Progress System */}
+        <div className="relative">
+            <div className="flex justify-between text-[10px] text-[var(--accent-cyan)] mb-1 uppercase tracking-wider font-bold">
+                <span>System Initialization</span>
+                <span>{Math.round(progress)}%</span>
+            </div>
+            <div className="h-1 w-full bg-[#1a1a1a] rounded-full overflow-hidden">
+                <div 
+                    className="h-full bg-[var(--accent-cyan)] shadow-[0_0_10px_var(--accent-cyan)] transition-all duration-75 ease-out"
+                    style={{ width: `${progress}%` }}
+                />
+            </div>
+        </div>
 
-// Lap Counter Loader
-export function LapCounterLoader({ currentLap = 1, totalLaps = 58 }: { currentLap?: number; totalLaps?: number }) {
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="flex items-baseline gap-2">
-        <span className="font-orbitron text-6xl font-black text-[var(--accent-cyan)]">
-          {currentLap}
-        </span>
-        <span className="font-mono text-2xl text-[var(--text-muted)]">/</span>
-        <span className="font-orbitron text-2xl font-bold text-[var(--text-silver)]">
-          {totalLaps}
-        </span>
+        {/* Decorative Speed Lines */}
+        <div className="absolute top-1/2 -left-12 w-[1px] h-24 bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
+        <div className="absolute top-1/2 -right-12 w-[1px] h-24 bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
+
       </div>
-      
-      {/* Progress bar */}
-      <div className="w-48 h-2 bg-[var(--bg-carbon)] rounded-full overflow-hidden">
-        <div 
-          className="h-full bg-[var(--accent-cyan)] rounded-full transition-all duration-300"
-          style={{ width: `${(currentLap / totalLaps) * 100}%` }}
-        />
-      </div>
-      
-      <span className="font-mono text-xs text-[var(--text-muted)] uppercase tracking-widest">
-        LOADING LAP DATA
-      </span>
     </div>
   );
 }

@@ -19,7 +19,7 @@ interface TimeLeft {
 export default function LaunchSequence({ 
   targetTime, 
   onLock,
-  label = "PREDICTION WINDOW CLOSES IN:",
+  label = "PREDICTION WINDOW CLOSES",
   showSeconds = true
 }: LaunchSequenceProps) {
   const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
@@ -45,7 +45,6 @@ export default function LaunchSequence({
       };
     };
 
-    // Initial calculation
     const initial = calculateTimeLeft();
     setTimeLeft(initial);
     
@@ -54,7 +53,6 @@ export default function LaunchSequence({
       onLock?.();
     }
 
-    // Update every second
     const timer = setInterval(() => {
       const updated = calculateTimeLeft();
       setTimeLeft(updated);
@@ -71,106 +69,71 @@ export default function LaunchSequence({
 
   if (!timeLeft) return null;
 
-  // Determine countdown state for styling
-  const getCountdownState = () => {
-    const hoursRemaining = timeLeft.days * 24 + timeLeft.hours;
-    if (timeLeft.total <= 0) return 'locked';
-    if (timeLeft.minutes < 10 && hoursRemaining === 0) return 'critical';
-    if (hoursRemaining < 1) return 'warning';
-    return 'normal';
-  };
-
-  const state = getCountdownState();
-
-  const stateStyles = {
-    normal: 'countdown-normal',
-    warning: 'countdown-warning',
-    critical: 'countdown-critical',
-    locked: 'text-red-500'
-  };
-
   const formatNumber = (num: number) => num.toString().padStart(2, '0');
 
   if (isLocked) {
     return (
-      <div className="relative">
-        <div className="glass-card p-8 text-center shutter-locked min-h-[200px]" />
+      <div className="relative overflow-hidden rounded-xl bg-black/40 border border-white/5 p-6 md:p-8 backdrop-blur-sm">
+         <div className="absolute inset-0 flex items-center justify-center bg-[var(--f1-red)]/20 z-10">
+            <span className="text-xl md:text-2xl font-black font-orbitron tracking-widest text-white animate-pulse">SESSION LOCKED</span>
+         </div>
       </div>
     );
   }
 
+  // Calculate criticality for color
+  const hoursRemaining = timeLeft.days * 24 + timeLeft.hours;
+  const isCritical = timeLeft.days === 0 && timeLeft.hours < 1;
+  const isWarning = timeLeft.days === 0 && timeLeft.hours < 24;
+
+  const digitColor = isCritical ? 'text-[var(--f1-red)]' : isWarning ? 'text-[var(--accent-gold)]' : 'text-white';
+  const glowShadow = isCritical ? 'drop-shadow-[0_0_10px_rgba(225,6,0,0.5)]' : isWarning ? 'drop-shadow-[0_0_8px_rgba(201,169,98,0.4)]' : '';
+
   return (
-    <div className="glass-card p-6 md:p-8 text-center">
-      {/* Label */}
-      <div className="text-xs md:text-sm font-orbitron text-[var(--text-silver)] tracking-[0.3em] uppercase mb-4 opacity-70">
-        {label}
+    <div className="w-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
+         <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-[var(--text-muted)]">{label}</div>
+         <div className={`w-1.5 h-1.5 rounded-full ${isCritical ? 'bg-[var(--f1-red)] animate-ping' : 'bg-[var(--accent-cyan)]'}`} />
       </div>
-      
-      {/* Countdown Display */}
-      <div className="flex items-center justify-center gap-2 md:gap-4">
-        {/* Days */}
-        <div className="flex flex-col items-center">
-          <span className={`countdown-digit text-4xl md:text-6xl lg:text-7xl ${stateStyles[state]}`}>
-            {formatNumber(timeLeft.days)}
-          </span>
-          <span className="text-[10px] md:text-xs text-[var(--text-muted)] font-mono uppercase tracking-widest mt-2">
-            Days
-          </span>
-        </div>
-        
-        <span className={`countdown-digit text-3xl md:text-5xl ${stateStyles[state]} opacity-50`}>:</span>
-        
-        {/* Hours */}
-        <div className="flex flex-col items-center">
-          <span className={`countdown-digit text-4xl md:text-6xl lg:text-7xl ${stateStyles[state]}`}>
-            {formatNumber(timeLeft.hours)}
-          </span>
-          <span className="text-[10px] md:text-xs text-[var(--text-muted)] font-mono uppercase tracking-widest mt-2">
-            Hours
-          </span>
-        </div>
-        
-        <span className={`countdown-digit text-3xl md:text-5xl ${stateStyles[state]} opacity-50`}>:</span>
-        
-        {/* Minutes */}
-        <div className="flex flex-col items-center">
-          <span className={`countdown-digit text-4xl md:text-6xl lg:text-7xl ${stateStyles[state]}`}>
-            {formatNumber(timeLeft.minutes)}
-          </span>
-          <span className="text-[10px] md:text-xs text-[var(--text-muted)] font-mono uppercase tracking-widest mt-2">
-            Mins
-          </span>
-        </div>
-        
-        {showSeconds && (
-          <>
-            <span className={`countdown-digit text-3xl md:text-5xl ${stateStyles[state]} opacity-50`}>:</span>
-            
-            {/* Seconds */}
-            <div className="flex flex-col items-center">
-              <span className={`countdown-digit text-4xl md:text-6xl lg:text-7xl ${stateStyles[state]}`}>
-                {formatNumber(timeLeft.seconds)}
-              </span>
-              <span className="text-[10px] md:text-xs text-[var(--text-muted)] font-mono uppercase tracking-widest mt-2">
-                Secs
-              </span>
-            </div>
-          </>
-        )}
-      </div>
-      
-      {/* Status Indicator */}
-      <div className="mt-6 flex items-center justify-center gap-2">
-        <div className={`w-2 h-2 rounded-full ${
-          state === 'critical' ? 'bg-[var(--alert-red)] animate-pulse' :
-          state === 'warning' ? 'bg-[var(--alert-amber)]' :
-          'bg-[var(--accent-cyan)]'
-        }`} />
-        <span className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-widest">
-          {state === 'critical' ? 'Window Closing' :
-           state === 'warning' ? 'Final Hour' :
-           'Window Open'}
-        </span>
+
+      {/* Digital Timer */}
+      <div className="grid grid-cols-4 gap-2 md:gap-4 p-4 rounded-xl bg-black/60 border border-white/10 shadow-inner">
+         {/* Days */}
+         <div className="flex flex-col items-center">
+            <span className={`text-3xl md:text-5xl font-black font-mono tracking-tighter ${digitColor} ${glowShadow}`}>
+               {timeLeft.days > 0 ? formatNumber(timeLeft.days) : '00'}
+            </span>
+            <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Days</span>
+         </div>
+
+         {/* Hours */}
+         <div className="flex flex-col items-center relative">
+            <span className={`text-3xl md:text-5xl font-black font-mono tracking-tighter ${digitColor} ${glowShadow}`}>
+               {formatNumber(timeLeft.hours)}
+            </span>
+             <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Hrs</span>
+             {/* Divider Dots */}
+             <div className="absolute -left-2 md:-left-3 top-2 md:top-4 text-white/20 text-2xl animate-pulse">:</div>
+         </div>
+
+         {/* Minutes */}
+         <div className="flex flex-col items-center relative">
+            <span className={`text-3xl md:text-5xl font-black font-mono tracking-tighter ${digitColor} ${glowShadow}`}>
+               {formatNumber(timeLeft.minutes)}
+            </span>
+            <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Min</span>
+            <div className="absolute -left-2 md:-left-3 top-2 md:top-4 text-white/20 text-2xl animate-pulse">:</div>
+         </div>
+
+         {/* Seconds */}
+         <div className="flex flex-col items-center relative">
+            <span className={`text-3xl md:text-5xl font-black font-mono tracking-tighter ${showSeconds ? digitColor : 'text-[var(--text-subtle)]'} ${glowShadow}`}>
+               {showSeconds ? formatNumber(timeLeft.seconds) : '--'}
+            </span>
+            <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Sec</span>
+             <div className="absolute -left-2 md:-left-3 top-2 md:top-4 text-white/20 text-2xl animate-pulse">:</div>
+         </div>
       </div>
     </div>
   );

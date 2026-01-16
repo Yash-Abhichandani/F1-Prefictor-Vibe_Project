@@ -28,7 +28,8 @@ export default function UserProfilePage() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [leagues, setLeagues] = useState<LeagueMember[]>([]);
   const [friends, setFriends] = useState<FriendRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [loadingSecondary, setLoadingSecondary] = useState(true);
   
   // Edit Mode State (Only if currentUser.id === profile.id)
   const [isEditing, setIsEditing] = useState(false);
@@ -47,25 +48,29 @@ export default function UserProfilePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUser(user);
-
-        // Fetch Target Profile Stats
-        const { data: profileData, error: profileError } = await supabase
+        // TIER 1: Critical Data (User + Profile)
+        const fetchUser = supabase.auth.getUser();
+        const fetchProfile = supabase
             .from("profiles")
             .select("*")
             .eq("id", targetUserId)
             .single();
-            
-        if (profileError || !profileData) {
+
+        const [userRes, profileRes] = await Promise.all([fetchUser, fetchProfile]);
+        
+        const user = userRes.data.user;
+        setCurrentUser(user);
+
+        const profileData = profileRes.data;
+        if (profileRes.error || !profileData) {
             console.error("Profile not found");
-            // Handle not found?
-            setLoading(false);
+            setLoadingProfile(false);
             return;
         }
 
         setProfile(profileData);
-        
+        setLoadingProfile(false); // Render Shell immediately
+
         // Init edit state (only if owning)
         if (user && user.id === targetUserId) {
             setEditTeam(profileData.favorite_team || "");
@@ -74,52 +79,57 @@ export default function UserProfilePage() {
             if (!profileData.favorite_team) setIsEditing(true);
         }
 
-        // Fetch Achievements (Target User)
-        const { data: achievementData } = await supabase
+        // TIER 2: Secondary Data (Parallel)
+        const fetchAchievements = supabase
             .from("user_achievements")
             .select("*, achievements(*)")
             .eq("user_id", targetUserId);
-        setAchievements(achievementData || []);
 
-        // Fetch Recent Predictions (Target User)
-        const { data: predictionData } = await supabase
+        const fetchPredictions = supabase
             .from("predictions")
             .select("*, races(*)")
             .eq("user_id", targetUserId)
             .order("curr_created_at", { ascending: false, foreignTable: "races" })
             .limit(5);
-        setPredictions(predictionData || []);
 
-        // Fetch Leagues (Target User)
-        const { data: leagueData } = await supabase
+        const fetchLeagues = supabase
             .from("league_members")
             .select("*, leagues(*)")
             .eq("user_id", targetUserId);
-        setLeagues(leagueData || []);
 
-        // Fetch Friends (Target User)
-        const { data: friendData } = await supabase
+        const fetchFriends = supabase
             .from("friendships")
             .select("*, friend:profiles!friend_id(*)")
             .eq("user_id", targetUserId)
             .eq("status", "accepted");
-        setFriends(friendData || []);
 
-        // Retroactive Checks (Only if viewing OWN profile)
-        if (user && user.id === targetUserId && predictionData && predictionData.length > 0) {
-            const hasFirstBadge = achievementData?.some((a: any) => a.achievement_id === 'first_prediction');
+        const [achievementsRes, predictionsRes, leaguesRes, friendsRes] = await Promise.all([
+            fetchAchievements,
+            fetchPredictions,
+            fetchLeagues,
+            fetchFriends
+        ]);
+
+        if (achievementsRes.data) setAchievements(achievementsRes.data);
+        if (predictionsRes.data) setPredictions(predictionsRes.data);
+        if (leaguesRes.data) setLeagues(leaguesRes.data);
+        if (friendsRes.data) setFriends(friendsRes.data);
+
+        // Retroactive Checks
+        if (user && user.id === targetUserId && predictionsRes.data && predictionsRes.data.length > 0) {
+            const hasFirstBadge = achievementsRes.data?.some((a: any) => a.achievement_id === 'first_prediction');
             if (!hasFirstBadge) {
                await supabase
                     .from('user_achievements')
                     .insert({ user_id: user.id, achievement_id: 'first_prediction' });
-               // We don't verify result here for simplicity, next load will show it
             }
         }
 
+        setLoadingSecondary(false);
+
       } catch (error) {
         console.error("Profile Error:", error);
-      } finally {
-        setLoading(false);
+        setLoadingProfile(false);
       }
     };
     fetchData();
@@ -166,8 +176,8 @@ export default function UserProfilePage() {
     }
   };
 
-  if (loading) return <LoadingSpinner variant="f1" message="Loading Profile Data..." />;
-  if (!profile) return <div className="text-white text-center pt-32">Profile not found.</div>;
+  if (loadingProfile) return <LoadingSpinner variant="f1" message="Loading Profile..." />;
+  if (!profile) return <div className="text-white text-center pt-32 text-xl font-bold">Profile not found.</div>;
 
   const isOwner = currentUser?.id === targetUserId;
 
@@ -183,7 +193,7 @@ export default function UserProfilePage() {
         <div className="max-w-7xl mx-auto px-6">
             
             {/* Header Section */}
-            <div className="mb-12 flex flex-col md:flex-row items-center gap-8 relative">
+            <div className="mb-12 flex flex-col md:flex-row items-center gap-8 relative animate-fade-in">
                 {/* Back / Cancel Edit */}
                 {isEditing && (
                     <button 
@@ -341,116 +351,122 @@ export default function UserProfilePage() {
                     <div className="text-4xl font-bold text-white font-mono">{predictions.length}</div>
                 </GlassCard>
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* LEFT COL: Trophies & Garages */}
-                <div className="lg:col-span-2 space-y-8">
-                    {/* Trophy Case */}
-                    <div>
-                        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3"><span>🏆</span> TROPHY CASE</h2>
-                         {achievements.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {achievements.map((ua) => (
-                                    <GlassCard key={ua.achievement_id} className="p-4 flex items-center gap-4 hover:border-[var(--accent-gold)] transition-colors">
-                                        <div className="w-16 h-16 rounded-xl bg-[var(--bg-onyx)] flex items-center justify-center text-3xl shadow-inner border border-white/5">
-                                            {ua.achievements.icon}
-                                        </div>
-                                        <div>
-                                            <div className="font-bold text-white text-lg">{ua.achievements.name}</div>
-                                            <div className="text-xs text-[var(--text-muted)] mb-1">{ua.achievements.description}</div>
-                                            <div className="text-[10px] text-[var(--accent-gold)] font-mono uppercase">
-                                                Unlocked {new Date(ua.unlocked_at).toLocaleDateString()}
+             
+             {loadingSecondary ? (
+                 <div className="py-12">
+                     <LoadingSpinner message="Loading Stats..." />
+                 </div>
+             ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in-up">
+                    {/* LEFT COL: Trophies & Garages */}
+                    <div className="lg:col-span-2 space-y-8">
+                        {/* Trophy Case */}
+                        <div>
+                            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3"><span>🏆</span> TROPHY CASE</h2>
+                             {achievements.length > 0 ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {achievements.map((ua) => (
+                                        <GlassCard key={ua.achievement_id} className="p-4 flex items-center gap-4 hover:border-[var(--accent-gold)] transition-colors">
+                                            <div className="w-16 h-16 rounded-xl bg-[var(--bg-onyx)] flex items-center justify-center text-3xl shadow-inner border border-white/5">
+                                                {ua.achievements.icon}
                                             </div>
-                                        </div>
-                                    </GlassCard>
-                                ))}
-                            </div>
-                        ) : (
-                            <GlassCard className="p-12 text-center border-dashed border-[var(--text-muted)]/30">
-                                <div className="text-4xl opacity-30 mb-4">🔒</div>
-                                <p className="text-[var(--text-muted)]">No trophies unlocked yet.</p>
-                            </GlassCard>
-                        )}
-                    </div>
-
-                    {/* Leagues */}
-                    <div>
-                        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3"><span>🏳️</span> GARAGES</h2>
-                        {leagues.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {leagues.map((lm) => (
-                                    <GlassCard key={lm.league_id} className="p-5 flex items-center justify-between group cursor-pointer hover:bg-white/5" interactive onClick={() => router.push(`/leagues/${lm.league_id}`)}>
-                                        <div>
-                                            <div className="font-bold text-white text-lg group-hover:text-[var(--accent-cyan)]">{lm.leagues.name}</div>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <Badge variant="outline" size="sm" className="text-[10px]">{lm.role.toUpperCase()}</Badge>
-                                                <span className="text-xs text-[var(--text-muted)]">{lm.leagues.members_count || '?'} Members</span>
+                                            <div>
+                                                <div className="font-bold text-white text-lg">{ua.achievements.name}</div>
+                                                <div className="text-xs text-[var(--text-muted)] mb-1">{ua.achievements.description}</div>
+                                                <div className="text-[10px] text-[var(--accent-gold)] font-mono uppercase">
+                                                    Unlocked {new Date(ua.unlocked_at).toLocaleDateString()}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="text-2xl opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">→</div>
-                                    </GlassCard>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="p-6 rounded-xl border border-white/5 bg-[var(--bg-surface)] text-center">
-                                <p className="text-[var(--text-muted)]">{isOwner ? "Not in any leagues yet." : "User is not in any leagues."}</p>
-                                {isOwner && <F1Button href="/leagues" variant="secondary" size="sm" className="mt-3">Find a League</F1Button>}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* RIGHT COL: Friends & History */}
-                <div className="space-y-8">
-                    {/* Friends */}
-                    <GlassCard className="p-6">
-                        <h3 className="text-lg font-bold text-white mb-4 flex items-center justify-between">
-                            <span>👥 PADDOCK</span>
-                            <span className="text-xs font-normal text-[var(--accent-gold)]">{friends.length} Friends</span>
-                        </h3>
-                        {friends.length > 0 ? (
-                            <div className="space-y-3">
-                                {friends.map((f) => (
-                                    <div key={f.friend_id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer" onClick={() => router.push(`/profile/${f.friend_id}`)}>
-                                        <div 
-                                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-black"
-                                            style={{ backgroundColor: f.friend?.favorite_team ? TEAM_COLORS[f.friend.favorite_team] : '#fff' }}
-                                        >
-                                            {f.friend?.username?.[0]?.toUpperCase() || 'F'}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="text-sm font-bold text-white truncate">{f.friend?.username || 'Unknown'}</div>
-                                            <div className="text-[10px] text-[var(--text-subtle)] truncate">{f.friend?.favorite_team || 'Free Agent'}</div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-4 text-xs text-[var(--text-muted)]">No friends details available.</div>
-                        )}
-                    </GlassCard>
-
-                     {/* History */}
-                     <GlassCard className="p-6">
-                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><span>📜</span> HISTORY</h3>
-                        <div className="space-y-4">
-                            {predictions.length > 0 ? predictions.map((pred, i) => (
-                                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-[var(--bg-onyx)] border border-[var(--glass-border)]">
-                                    <div className="text-[10px] font-bold text-[var(--text-muted)] font-mono text-center leading-tight">
-                                        RACE<br/><span className="text-white text-sm">{i+1}</span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-bold text-white truncate">{pred.races?.name || "Unknown GP"}</div>
-                                        <div className="text-xs text-[var(--accent-cyan)] font-mono">{pred.manual_score || 0} Pts</div>
-                                    </div>
+                                        </GlassCard>
+                                    ))}
                                 </div>
-                            )) : (
-                                <div className="text-[var(--text-muted)] text-sm italic py-2">No recent history.</div>
+                            ) : (
+                                <GlassCard className="p-12 text-center border-dashed border-[var(--text-muted)]/30">
+                                    <div className="text-4xl opacity-30 mb-4">🔒</div>
+                                    <p className="text-[var(--text-muted)]">No trophies unlocked yet.</p>
+                                </GlassCard>
                             )}
                         </div>
-                    </GlassCard>
+
+                        {/* Leagues */}
+                        <div>
+                            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3"><span>🏳️</span> GARAGES</h2>
+                            {leagues.length > 0 ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {leagues.map((lm) => (
+                                        <GlassCard key={lm.league_id} className="p-5 flex items-center justify-between group cursor-pointer hover:bg-white/5" interactive onClick={() => router.push(`/leagues/${lm.league_id}`)}>
+                                            <div>
+                                                <div className="font-bold text-white text-lg group-hover:text-[var(--accent-cyan)]">{lm.leagues.name}</div>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <Badge variant="outline" size="sm" className="text-[10px]">{lm.role.toUpperCase()}</Badge>
+                                                    <span className="text-xs text-[var(--text-muted)]">{lm.leagues.members_count || '?'} Members</span>
+                                                </div>
+                                            </div>
+                                            <div className="text-2xl opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">→</div>
+                                        </GlassCard>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="p-6 rounded-xl border border-white/5 bg-[var(--bg-surface)] text-center">
+                                    <p className="text-[var(--text-muted)]">{isOwner ? "Not in any leagues yet." : "User is not in any leagues."}</p>
+                                    {isOwner && <F1Button href="/leagues" variant="secondary" size="sm" className="mt-3">Find a League</F1Button>}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* RIGHT COL: Friends & History */}
+                    <div className="space-y-8">
+                        {/* Friends */}
+                        <GlassCard className="p-6">
+                            <h3 className="text-lg font-bold text-white mb-4 flex items-center justify-between">
+                                <span>👥 PADDOCK</span>
+                                <span className="text-xs font-normal text-[var(--accent-gold)]">{friends.length} Friends</span>
+                            </h3>
+                            {friends.length > 0 ? (
+                                <div className="space-y-3">
+                                    {friends.map((f) => (
+                                        <div key={f.friend_id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer" onClick={() => router.push(`/profile/${f.friend_id}`)}>
+                                            <div 
+                                                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-black"
+                                                style={{ backgroundColor: f.friend?.favorite_team ? TEAM_COLORS[f.friend.favorite_team] : '#fff' }}
+                                            >
+                                                {f.friend?.username?.[0]?.toUpperCase() || 'F'}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-sm font-bold text-white truncate">{f.friend?.username || 'Unknown'}</div>
+                                                <div className="text-[10px] text-[var(--text-subtle)] truncate">{f.friend?.favorite_team || 'Free Agent'}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-4 text-xs text-[var(--text-muted)]">No friends details available.</div>
+                            )}
+                        </GlassCard>
+
+                         {/* History */}
+                         <GlassCard className="p-6">
+                            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><span>📜</span> HISTORY</h3>
+                            <div className="space-y-4">
+                                {predictions.length > 0 ? predictions.map((pred, i) => (
+                                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-[var(--bg-onyx)] border border-[var(--glass-border)]">
+                                        <div className="text-[10px] font-bold text-[var(--text-muted)] font-mono text-center leading-tight">
+                                            RACE<br/><span className="text-white text-sm">{i+1}</span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-sm font-bold text-white truncate">{pred.races?.name || "Unknown GP"}</div>
+                                            <div className="text-xs text-[var(--accent-cyan)] font-mono">{pred.manual_score || 0} Pts</div>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="text-[var(--text-muted)] text-sm italic py-2">No recent history.</div>
+                                )}
+                            </div>
+                        </GlassCard>
+                    </div>
                 </div>
-            </div>
+             )}
         </div>
     </div>
   );

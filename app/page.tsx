@@ -3,9 +3,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
 import { config } from "../lib/config";
-import LaunchSequence from "./components/LaunchSequence";
-import RivalryCard from "./components/RivalryCard";
+import TelemetryLoader from "./components/TelemetryLoader";
 import LoadingSpinner from "./components/LoadingSpinner";
+import GlassCard from "./components/ui/GlassCard";
+import F1Button from "./components/ui/F1Button";
+import Badge from "./components/ui/Badge";
+import LaunchSequence from "./components/LaunchSequence";
 
 interface Race {
   id: number;
@@ -19,6 +22,7 @@ interface Race {
 export default function Home() {
   const [nextRace, setNextRace] = useState<Race | null>(null);
   const [loading, setLoading] = useState(true);
+  const [introFinished, setIntroFinished] = useState(false);
   const [lastResults, setLastResults] = useState<any[]>([]);
   const [topDrivers, setTopDrivers] = useState<any[]>([]);
   const [userStandings, setUserStandings] = useState<any[]>([]);
@@ -44,7 +48,6 @@ export default function Home() {
       try {
         // 1. Critical Data: Next Race (Supabase - Fast)
         const today = new Date().toISOString();
-        
         const { data } = await supabase
           .from("races")
           .select("*")
@@ -55,7 +58,7 @@ export default function Home() {
         if (data && data.length > 0) {
           setNextRace(data[0]);
         } else {
-          // Fallback to first race of season if no next race
+          // Fallback to first race of season
           const { data: allRaces } = await supabase
             .from("races")
             .select("*")
@@ -68,12 +71,10 @@ export default function Home() {
       } catch (err) {
         console.error("Critical Data Error:", err);
       } finally {
-        // Show UI immediately after checking for race data
         setLoading(false);
       }
 
-      // 2. Secondary Data: Stats & Standings (Background - Parallel)
-      // These will populate as they arrive without blocking the UI
+      // 2. Secondary Data: Stats & Standings (Parallel)
       const fetchSecondaryData = async () => {
         const fetchResults = async () => {
             try {
@@ -97,15 +98,14 @@ export default function Home() {
 
         const fetchUserStandings = async () => {
             try {
-               const res = await fetch(`${config.apiUrl}/standings`);
-               if (res.ok) {
-                 const data = await res.json();
-                 setUserStandings(data);
-               }
+                const res = await fetch(`${config.apiUrl}/standings`);
+                if (res.ok) {
+                  const data = await res.json();
+                  setUserStandings(data);
+                }
             } catch (e) { console.error("User Standings Error", e); }
         };
 
-        // Fire all in parallel
         await Promise.allSettled([fetchResults(), fetchDrivers(), fetchUserStandings()]);
       };
 
@@ -115,307 +115,289 @@ export default function Home() {
     fetchData();
   }, [supabase]);
 
-  if (loading) return <LoadingSpinner message="Initializing Command Center..." />;
+  // Combined Loading State: Show loader if Animation is running OR critical data is loading
+  if (!introFinished || loading) {
+     return <TelemetryLoader onComplete={() => setIntroFinished(true)} />;
+  }
 
-
-  // All navigation items - comprehensive hub
+  // Nav Items Configuration
   const navItems = [
-    { href: '/calendar', icon: '📅', label: 'Race Calendar', desc: 'Full 2026 Schedule', color: 'cyan' },
-    { href: '/leaderboard', icon: '🏆', label: 'Leaderboard', desc: 'Prediction Rankings', color: 'gold' },
-    { href: '/leagues', icon: '👥', label: 'My Leagues', desc: 'Compete & Chat', color: 'cyan' },
-    { href: '/standings', icon: '📊', label: 'F1 Standings', desc: 'Driver & Team', color: 'cyan' },
-    { href: '/rivalries', icon: '⚔️', label: 'Rivalries', desc: 'Head-to-Head', color: 'red' },
-    { href: '/friends', icon: '🤝', label: 'Friends', desc: 'Social Hub', color: 'gold' },
-    { href: '/classification', icon: '🏁', label: 'Results', desc: 'Past Predictions', color: 'cyan' },
-    { href: '/admin', icon: '⚙️', label: 'Admin', desc: 'Manage Races', color: 'red' },
+    { href: '/calendar', icon: '📅', label: 'CALENDAR', desc: 'Full 2026 Schedule', color: 'cyan' },
+    { href: '/leaderboard', icon: '🏆', label: 'LEADERBOARD', desc: 'Global Rankings', color: 'gold' },
+    { href: '/leagues', icon: '👥', label: 'LEAGUES', desc: 'Squad Battles', color: 'cyan' },
+    { href: '/standings', icon: '📊', label: 'STANDINGS', desc: 'Driver & Constructor', color: 'cyan' },
+    { href: '/rivalries', icon: '⚔️', label: 'RIVALRIES', desc: 'Head-to-Head', color: 'red' },
+    { href: '/profile', icon: '👤', label: 'PROFILE', desc: 'Stats & History', color: 'gold' },
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--bg-void)] relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--bg-void)] relative overflow-x-hidden selection:bg-[var(--accent-gold)] selection:text-black">
       
+      {/* Noise Texture Overlay */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[1]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
+
+      {/* Background Ambience */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[var(--accent-cyan)] opacity-[0.04] blur-[180px] rounded-full" />
+          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[var(--f1-red)] opacity-[0.04] blur-[180px] rounded-full" />
+      </div>
+
       {/* === HERO SECTION === */}
-      <section className="relative pt-28 pb-16 md:pt-32 md:pb-20 border-b border-[var(--glass-border)]">
-        {/* Racing stripe accents */}
-        <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-[var(--f1-red)] via-[var(--f1-red)]/50 to-transparent" />
-        <div className="absolute top-0 left-4 w-1 h-1/2 bg-gradient-to-b from-[var(--accent-gold)] to-transparent" />
-        
-        <div className="max-w-6xl mx-auto px-6">
-          {/* Top Row - Branding */}
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-10">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--f1-red)]/10 border border-[var(--f1-red)]/30 mb-4">
-                <span className="w-2 h-2 rounded-full bg-[var(--f1-red)] animate-pulse" />
-                <span className="text-xs font-bold text-[var(--f1-red)] tracking-wider uppercase">Live • 2026 Season</span>
+      <section className="relative pt-36 pb-24 md:pt-48 md:pb-40 border-b border-white/5 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/5 via-transparent to-transparent z-10">
+        <div className="max-w-7xl mx-auto px-6 relative">
+          
+          <div className="flex flex-col lg:flex-row items-end justify-between gap-16 lg:gap-8">
+            {/* Left Content */}
+            <div className="max-w-3xl animate-fade-in-up relative z-20">
+              
+              <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8 hover:bg-white/10 transition-colors cursor-default">
+                 <div className="flex gap-1.5">
+                    {[1,2,3,4,5].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-[var(--f1-red)] animate-pulse" style={{ animationDelay: `${i*0.2}s` }} />)}
+                 </div>
+                 <span className="text-[10px] font-bold tracking-[0.2em] text-white/70 uppercase">Season 2026 Live</span>
               </div>
-              <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-2 font-orbitron">
-                <span className="text-white">F1</span>
-                <span className="text-[var(--f1-red)] ml-2">APEX</span>
+              
+              <h1 className="text-7xl md:text-[5.5rem] lg:text-[7rem] font-black tracking-tighter mb-8 font-orbitron leading-[0.85] uppercase">
+                <span className="text-white block drop-shadow-2xl">Predict.</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--f1-red)] via-[var(--f1-red-bright)] to-[var(--f1-red)] block animate-gradient-x">Dominate.</span>
               </h1>
-              <p className="text-lg text-[var(--text-secondary)] max-w-md">
-                The ultimate F1 prediction hub. Compete, predict, and dominate.
+              
+              <p className="text-xl md:text-2xl text-[var(--text-secondary)] max-w-xl leading-relaxed mb-12 font-light">
+                The advanced telemetry hub for true F1 enthusiasts. Analyze data, outsmart the grid, and claim the championship.
               </p>
+
+              <div className="flex flex-wrap gap-5">
+                 <F1Button href="/calendar" variant="primary" size="xl" icon="🏎️" pulse className="shadow-[0_0_40px_rgba(225,6,0,0.3)] hover:shadow-[0_0_60px_rgba(225,6,0,0.5)] border-none">
+                    START PREDICTING
+                 </F1Button>
+                 <F1Button href="/leagues" variant="outline" size="xl" className="backdrop-blur-sm hover:bg-white/10">
+                    JOIN LEAGUE
+                 </F1Button>
+              </div>
             </div>
 
-            {/* User Quick Stats (if logged in) */}
-            {userStandings.length > 0 && (
-              <div className="glass-card p-4 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--accent-gold)] to-[var(--accent-gold)]/60 flex items-center justify-center text-black font-bold text-lg">
-                  🏁
+            {/* Right Content - Featured Race Card */}
+            {nextRace && (
+                <div className="w-full lg:w-[480px] animate-fade-in-up relative z-20" style={{ animationDelay: '0.2s' }}>
+                    <div className="relative group perspective-1000">
+                        {/* Glow Effect */}
+                        <div className="absolute -inset-1 bg-gradient-to-br from-[var(--f1-red)] to-[var(--accent-gold)] rounded-3xl blur-xl opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                        
+                        <GlassCard variant="default" className="p-8 relative overflow-hidden h-full transform transition-all duration-500 hover:-translate-y-2 hover:rotate-1 border-white/10 shadow-2xl" withNoise>
+                             {/* Circuit Track SVG Overlay (Subtle) */}
+                             <div className="absolute -top-10 -right-10 w-80 h-80 opacity-[0.07] rotate-12 pointer-events-none">
+                                <svg viewBox="0 0 100 100" className="w-full h-full stroke-white fill-none stroke-[2]">
+                                    <path d="M20,50 Q40,20 60,50 T90,50" />
+                                </svg>
+                             </div>
+
+                             <div className="flex items-start justify-between mb-10 relative">
+                                <div>
+                                    <h3 className="text-[10px] font-bold text-[var(--accent-gold)] tracking-[0.2em] uppercase mb-2">UPCOMING EVENT</h3>
+                                    <div className="text-4xl font-black text-white font-orbitron leading-none">{nextRace.name.split(' ')[0]}</div>
+                                    <div className="text-xl font-bold text-white/50 font-orbitron">GRAND PRIX</div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider mb-1">Round</div>
+                                    <div className="text-3xl font-bold text-white font-mono">01</div>
+                                </div>
+                             </div>
+
+                             <div className="space-y-6 relative">
+                                <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)] bg-white/5 p-3 rounded-lg border border-white/5">
+                                    <span className="text-[var(--f1-red)]">📍</span>
+                                    <span className="font-medium tracking-wide">{nextRace.circuit}</span>
+                                </div>
+                                
+                                <div>
+                                    {nextRace.quali_time ? (
+                                        <LaunchSequence targetTime={nextRace.quali_time} label="PREDICTION WINDOW" />
+                                    ) : (
+                                        <div className="text-center p-8 border border-white/10 rounded-xl bg-black/20">
+                                            <div className="text-xl font-mono text-[var(--text-muted)] animate-pulse">TIMING TBC</div>
+                                        </div>
+                                    )}
+                                </div>
+                             </div>
+                             
+                             <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
+                                <Badge variant="gold" className="bg-[var(--accent-gold)]/10 text-[var(--accent-gold)] border-[var(--accent-gold)]/20">{getRaceWeekendDates(nextRace.race_time)}</Badge>
+                                <Link href={`/predict/${nextRace.id}`} className="flex items-center gap-2 text-white text-xs font-bold tracking-[0.15em] hover:text-[var(--accent-cyan)] transition-colors group/link uppercase">
+                                   Enter Paddock <span className="group-hover/link:translate-x-1 transition-transform">→</span>
+                                </Link>
+                             </div>
+                        </GlassCard>
+                    </div>
                 </div>
-                <div>
-                  <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Top Predictor</div>
-                  <div className="text-lg font-bold text-white">{userStandings[0]?.username?.split('@')[0] || 'Leader'}</div>
-                  <div className="text-sm text-[var(--accent-gold)] font-mono font-bold">{userStandings[0]?.total_score || 0} pts</div>
-                </div>
-              </div>
             )}
           </div>
+        </div>
+      </section>
 
-          {/* NEXT RACE - Big Featured Card */}
-          {nextRace && (
-            <div className="relative mb-10">
-              {/* Featured race card with racing aesthetics */}
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--bg-carbon)] via-[var(--bg-onyx)] to-[var(--bg-carbon)] border border-[var(--glass-border)] p-8 md:p-10">
-                {/* Racing stripes background */}
-                <div className="absolute inset-0 opacity-5">
-                  <div className="absolute top-0 left-0 w-full h-2 bg-[var(--f1-red)]" />
-                  <div className="absolute top-4 left-0 w-3/4 h-1 bg-[var(--f1-red)]" />
-                  <div className="absolute bottom-0 right-0 w-full h-2 bg-[var(--accent-gold)]" />
-                </div>
-                
-                <div className="relative z-10">
-                  {/* Badges */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="badge badge-red">NEXT RACE</span>
-                    {nextRace.is_sprint && <span className="badge badge-cyan">SPRINT WEEKEND</span>}
-                    <span className="badge badge-gold">{getRaceWeekendDates(nextRace.race_time)}</span>
-                  </div>
+      {/* === COMMAND CENTER GRID === */}
+      <section className="py-24 px-6 relative z-10">
+          <div className="max-w-7xl mx-auto">
+             <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+                 <div>
+                    <h2 className="text-3xl md:text-5xl font-black text-white font-orbitron mb-4">
+                        COMMAND CENTER
+                    </h2>
+                    <div className="h-1 w-24 bg-[var(--f1-red)] shadow-[0_0_15px_var(--f1-red)] rounded-full text-left" />
+                 </div>
+                 
+                 {userStandings.length > 0 && (
+                     <div className="flex items-center gap-4 bg-white/5 rounded-2xl px-6 py-4 border border-white/5 backdrop-blur-sm">
+                        <div className="text-right">
+                           <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Current Ranking</div>
+                           <div className="text-white font-bold text-sm tracking-wide">GLOBAL LEAGUE</div>
+                        </div>
+                        <div className="text-4xl font-bold text-[var(--accent-gold)] font-mono">#1</div>
+                     </div>
+                 )}
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {navItems.map((item, i) => (
+                     <Link key={item.href} href={item.href} className="group h-full">
+                         <GlassCard 
+                            className="h-full p-8 transition-all duration-500 group-hover:-translate-y-2 group-hover:border-white/20 bg-gradient-to-b from-white/[0.03] to-transparent"
+                            variant="default"
+                            interactive
+                         >
+                            <div className="flex justify-between items-start mb-8">
+                                <div className={`text-4xl p-4 rounded-2xl transition-all duration-500 bg-white/5 border border-white/5 group-hover:scale-110
+                                    ${item.color === 'cyan' ? 'text-[var(--accent-cyan)] group-hover:shadow-[0_0_30px_rgba(0,212,255,0.2)]' : 
+                                      item.color === 'gold' ? 'text-[var(--accent-gold)] group-hover:shadow-[0_0_30px_rgba(201,169,98,0.2)]' :
+                                      'text-[var(--f1-red)] group-hover:shadow-[0_0_30px_rgba(225,6,0,0.2)]'}
+                                `}>
+                                    {item.icon}
+                                </div>
+                                <div className={`text-2xl transition-all duration-500 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0
+                                    ${item.color === 'cyan' ? 'text-[var(--accent-cyan)]' : item.color === 'gold' ? 'text-[var(--accent-gold)]' : 'text-[var(--f1-red)]'}
+                                `}>→</div>
+                            </div>
+                            
+                            <h3 className="text-2xl font-bold text-white mb-2 font-orbitron tracking-wide group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-white/60 transition-all">
+                                {item.label}
+                            </h3>
+                            <p className="text-[var(--text-secondary)] text-sm group-hover:text-white/80 transition-colors leading-relaxed">
+                                {item.desc}
+                            </p>
+                         </GlassCard>
+                     </Link>
+                 ))}
+             </div>
+          </div>
+      </section>
+
+      {/* === LIVE TELEMETRY SECTION === */}
+      <section className="py-24 px-6 border-t border-white/5 bg-black/20 relative z-10">
+          <div className="max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   
-                  {/* LARGE GP NAME - User requested this to be bigger */}
-                  <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-2 font-orbitron tracking-tight">
-                    {nextRace.name.replace(' Grand Prix', '')}
-                  </h2>
-                  <div className="text-xl md:text-2xl font-semibold text-[var(--accent-gold)] mb-6">
-                    GRAND PRIX
-                  </div>
-                  
-                  {/* Circuit */}
-                  <div className="flex items-center gap-3 text-[var(--text-muted)] mb-8">
-                    <span className="text-[var(--f1-red)]">📍</span>
-                    <span className="text-lg">{nextRace.circuit}</span>
-                  </div>
+                  {/* Podium Module - Linked to Classification (Results) */}
+                  <Link href="/classification" className="group block">
+                      <div className="bg-[var(--bg-carbon)] rounded-3xl border border-white/5 p-8 relative overflow-hidden h-full transition-all duration-300 group-hover:border-[var(--accent-gold)]/50 group-hover:shadow-[0_0_30px_rgba(201,169,98,0.1)]">
+                          <div className="absolute top-0 right-0 p-32 bg-[var(--accent-gold)] opacity-[0.03] blur-3xl rounded-full transition-opacity duration-500 group-hover:opacity-[0.08]"></div>
+                          
+                          <div className="flex items-center justify-between mb-8">
+                              <div>
+                                  <h3 className="text-xl font-bold text-white font-orbitron mb-1 group-hover:text-[var(--accent-gold)] transition-colors">RECENT RESULTS</h3>
+                                  <div className="text-[10px] text-[var(--accent-gold)] tracking-widest uppercase font-bold">Latest Podium</div>
+                              </div>
+                              <Badge variant="outline" className="group-hover:bg-[var(--accent-gold)] group-hover:text-black transition-colors">LAST RACE</Badge>
+                          </div>
 
-                  {/* Countdown - Smaller than GP name */}
-                  <div className="mb-8">
-                    {nextRace.quali_time ? (
-                      <div>
-                        <div className="text-xs text-[var(--text-muted)] uppercase tracking-[0.2em] mb-2">Predictions Close In</div>
-                        <LaunchSequence targetTime={nextRace.quali_time} label="" />
+                          {lastResults.length > 0 ? (
+                              <div className="space-y-4 relative z-10">
+                                  {lastResults.map((result, i) => (
+                                      <div key={i} className="flex items-center gap-6 p-4 rounded-xl bg-white/[0.02] border border-white/5 group-hover:bg-white/[0.04] transition-all">
+                                          <div className={`text-2xl font-black font-mono w-8 ${i===0 ? 'text-[var(--accent-gold)] drop-shadow-[0_0_8px_rgba(201,169,98,0.5)]' : 'text-white/30'}`}>0{i+1}</div>
+                                          <div className="flex-1">
+                                              <div className="font-bold text-white text-lg tracking-wide transition-colors">{result.Driver.familyName.toUpperCase()}</div>
+                                              <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{result.Constructor.name}</div>
+                                          </div>
+                                          <div className="text-right">
+                                              <div className="text-xl font-bold text-white font-mono gap-1 flex items-center justify-end">
+                                                 <span className="text-[var(--accent-cyan)] text-sm">+</span>
+                                                 {result.points}
+                                              </div>
+                                          </div>
+                                      </div>
+                                  ))}
+                              </div>
+                          ) : (
+                              <div className="h-48 flex flex-col items-center justify-center text-[var(--text-muted)] border border-dashed border-white/10 rounded-xl bg-white/[0.01]">
+                                  <span className="text-4xl mb-4 grayscale opacity-20">🏁</span>
+                                  <span className="text-sm tracking-widest uppercase">Awaiting Season Start</span>
+                              </div>
+                          )}
                       </div>
-                    ) : (
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent-cyan-dim)] border border-[var(--accent-cyan)]/30">
-                        <span className="w-2 h-2 rounded-full bg-[var(--accent-cyan)] animate-pulse" />
-                        <span className="text-sm font-medium text-[var(--accent-cyan)]">Session times TBC</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* CTA */}
-                  <Link 
-                    href={`/predict/${nextRace.id}`}
-                    className="inline-flex items-center gap-3 bg-[var(--f1-red)] text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-[var(--f1-red-bright)] transition-all hover:scale-105 shadow-[0_0_30px_rgba(225,6,0,0.3)]"
-                  >
-                    <span className="text-2xl">🏎️</span>
-                    <span>MAKE PREDICTIONS</span>
-                    <span className="text-2xl">→</span>
                   </Link>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
 
-      {/* === NAVIGATION HUB === All pages accessible */}
-      <section className="py-12 px-6 border-b border-[var(--glass-border)]">
-        <div className="max-w-6xl mx-auto">
-          <h3 className="text-center text-sm font-bold text-[var(--text-muted)] tracking-[0.3em] uppercase mb-8 flex items-center justify-center gap-4">
-            <span className="h-px w-16 bg-gradient-to-r from-transparent to-[var(--accent-gold)]" />
-            Command Center
-            <span className="h-px w-16 bg-gradient-to-l from-transparent to-[var(--accent-gold)]" />
-          </h3>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`group relative p-5 rounded-xl border transition-all duration-300 text-center
-                  ${item.color === 'red' 
-                    ? 'border-[var(--f1-red)]/30 hover:border-[var(--f1-red)] hover:bg-[var(--f1-red)]/10'
-                    : item.color === 'gold'
-                    ? 'border-[var(--accent-gold)]/20 hover:border-[var(--accent-gold)] hover:bg-[var(--accent-gold)]/10'
-                    : 'border-[var(--glass-border)] hover:border-[var(--accent-cyan)] hover:bg-[var(--accent-cyan)]/10'
-                  }
-                  bg-[var(--bg-onyx)]
-                `}
-              >
-                <div className="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">{item.icon}</div>
-                <div className={`font-bold text-sm mb-1 transition-colors
-                  ${item.color === 'red' ? 'text-white group-hover:text-[var(--f1-red)]'
-                    : item.color === 'gold' ? 'text-white group-hover:text-[var(--accent-gold)]'
-                    : 'text-white group-hover:text-[var(--accent-cyan)]'
-                  }
-                `}>
-                  {item.label}
-                </div>
-                <div className="text-xs text-[var(--text-subtle)]">{item.desc}</div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+                  {/* Championship Module - Linked to Standings */}
+                  <Link href="/standings" className="group block">
+                      <div className="bg-[var(--bg-carbon)] rounded-3xl border border-white/5 p-8 relative overflow-hidden h-full transition-all duration-300 group-hover:border-[var(--f1-red)]/50 group-hover:shadow-[0_0_30px_rgba(225,6,0,0.1)]">
+                           <div className="absolute top-0 left-0 p-32 bg-[var(--f1-red)] opacity-[0.03] blur-3xl rounded-full transition-opacity duration-500 group-hover:opacity-[0.08]"></div>
 
-      {/* === LIVE DATA PANELS === */}
-      <section className="py-12 px-6">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* PODIUM */}
-          <div className="telemetry-panel p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="text-2xl">🏆</span>
-              <div>
-                <h3 className="text-lg font-bold text-white">Last Race Podium</h3>
-                <p className="text-xs text-[var(--text-muted)]">Live F1 Data</p>
-              </div>
-            </div>
-            
-            {lastResults.length > 0 ? (
-              <div className="space-y-3">
-                {lastResults.map((result, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-center gap-4 p-3 rounded-lg bg-[var(--bg-onyx)] border border-[var(--glass-border)] hover:border-[var(--accent-gold)]/50 transition-all group"
-                  >
-                    <div className={`
-                      w-10 h-10 flex items-center justify-center rounded-lg font-bold font-mono
-                      ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black' :
-                        index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-black' :
-                        'bg-gradient-to-br from-orange-600 to-orange-700 text-white'}
-                    `}>
-                      P{index + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-white truncate">{result.Driver.familyName.toUpperCase()}</div>
-                      <div className="text-xs text-[var(--text-muted)]">{result.Constructor.name}</div>
-                    </div>
-                    <div className="text-xl font-bold text-[var(--accent-cyan)] font-mono">+{result.points || 0}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-[var(--text-muted)]">
-                <span className="text-3xl opacity-40">🏁</span>
-                <p className="mt-2 text-sm">Season not started</p>
-              </div>
-            )}
-          </div>
-          
-          {/* CHAMPIONSHIP */}
-          <div className="telemetry-panel p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="text-2xl">📊</span>
-              <div>
-                <h3 className="text-lg font-bold text-white">Championship</h3>
-                <p className="text-xs text-[var(--text-muted)]">Driver Standings</p>
-              </div>
-            </div>
-            
-            {topDrivers.length > 0 ? (
-              <div className="space-y-2">
-                {topDrivers.map((driver, index) => (
-                  <div 
-                    key={index}
-                    className={`flex items-center gap-3 p-3 rounded-lg transition-all
-                      ${index === 0 
-                        ? 'bg-[var(--accent-gold-dim)] border border-[var(--accent-gold)]/30' 
-                        : 'bg-[var(--bg-onyx)] border border-[var(--glass-border)] hover:border-[var(--glass-border-light)]'
-                      }
-                    `}
-                  >
-                    <div className={`w-8 h-8 flex items-center justify-center rounded-lg font-bold font-mono text-sm
-                      ${index === 0 ? 'bg-[var(--accent-gold)] text-black' : 'bg-[var(--bg-graphite)] text-[var(--text-muted)]'}
-                    `}>
-                      {driver.position}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className={`font-bold truncate ${index === 0 ? 'text-[var(--accent-gold)]' : 'text-white'}`}>
-                        {driver.Driver.familyName.toUpperCase()}
+                           <div className="flex items-center justify-between mb-8">
+                              <div>
+                                 <h3 className="text-xl font-bold text-white font-orbitron mb-1 group-hover:text-[var(--f1-red)] transition-colors">WDC STANDINGS</h3>
+                                 <div className="text-[10px] text-[var(--f1-red)] tracking-widest uppercase font-bold">Driver Championship</div>
+                              </div>
+                              <Badge variant="outline" className="group-hover:bg-[var(--f1-red)] group-hover:text-white transition-colors">LIVE</Badge>
+                          </div>
+
+                          {topDrivers.length > 0 ? (
+                              <div className="space-y-2 relative z-10">
+                                  {topDrivers.map((driver, i) => (
+                                      <div key={i} className="flex items-center justify-between p-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors rounded-lg px-4">
+                                          <div className="flex items-center gap-4">
+                                              <span className={`text-xs font-bold font-mono w-6 ${i===0 ? 'text-[var(--accent-gold)]' : 'text-white/30'}`}>{driver.position}</span>
+                                              <span className="font-bold text-white text-sm tracking-wide">{driver.Driver.familyName.toUpperCase()}</span>
+                                          </div>
+                                          <span className="font-mono font-bold text-[var(--text-secondary)] text-sm">{driver.points} <span className="text-[10px] text-[var(--text-muted)]">PTS</span></span>
+                                      </div>
+                                  ))}
+                                  <div className="pt-4 text-center">
+                                      <span className="inline-block text-[10px] text-[var(--accent-cyan)] group-hover:text-white tracking-[0.2em] uppercase font-bold transition-all border-b border-transparent group-hover:border-white pb-1">View Full Standings →</span>
+                                  </div>
+                              </div>
+                           ) : (
+                              <div className="h-48 flex flex-col items-center justify-center text-[var(--text-muted)] border border-dashed border-white/10 rounded-xl bg-white/[0.01]">
+                                  <span className="text-4xl mb-4 grayscale opacity-20">📊</span>
+                                  <span className="text-sm tracking-widest uppercase">Data Unavailable</span>
+                              </div>
+                           )}
                       </div>
-                    </div>
-                    <div className="text-lg font-bold text-white font-mono">{driver.points}</div>
-                  </div>
-                ))}
+                  </Link>
+
               </div>
-            ) : (
-              <div className="text-center py-8 text-[var(--text-muted)]">
-                <span className="text-3xl opacity-40">📈</span>
-                <p className="mt-2 text-sm">Awaiting first race</p>
-              </div>
-            )}
-            
-            <Link 
-              href="/standings" 
-              className="mt-4 block text-center text-sm text-[var(--accent-cyan)] hover:text-white transition-colors"
-            >
-              View Full Standings →
-            </Link>
           </div>
-        </div>
       </section>
 
-      {/* === RIVALRY SECTION === */}
-      {userStandings.length >= 2 && (
-        <section className="py-12 px-6 border-t border-[var(--glass-border)]">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-center gap-3 mb-8">
-              <span className="text-2xl">⚔️</span>
-              <h2 className="text-xl font-bold text-white">Featured Rivalry</h2>
-            </div>
-            <RivalryCard 
-              player1={{
-                name: userStandings[0].username.split('@')[0],
-                driver: "Max Verstappen (Red Bull)",
-                points: userStandings[0].total_score,
-              }}
-              player2={{
-                name: userStandings[1].username.split('@')[0],
-                driver: "Lewis Hamilton (Ferrari)",
-                points: userStandings[1].total_score,
-              }}
-              races={1}
-            />
-          </div>
-        </section>
-      )}
+      {/* === CTA FOOTER with Parallax Feel === */}
+      <section className="py-40 px-6 text-center relative overflow-hidden z-10">
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--f1-red)]/20 via-transparent to-transparent z-0 pointer-events-none"></div>
+          {/* Glowing Orb */}
+          <div className="absolute bottom-[-100px] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--f1-red)] opacity-10 blur-[150px] rounded-full pointer-events-none"></div>
 
-      {/* === FOOTER CTA === */}
-      <section className="py-16 px-6 text-center bg-gradient-to-t from-[var(--bg-midnight)] to-transparent">
-        <div className="max-w-2xl mx-auto">
-          <h3 className="text-3xl font-bold text-white mb-4">Ready to Race?</h3>
-          <p className="text-[var(--text-muted)] mb-8">
-            Join thousands of F1 fans making predictions every race weekend.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/login" className="btn-primary px-8 py-4 text-base">
-              Get Started Free
-            </Link>
-            <Link href="/calendar" className="btn-ghost px-8 py-4 text-base border border-[var(--glass-border)]">
-              View Schedule
-            </Link>
+          <div className="max-w-4xl mx-auto relative z-10">
+              <h2 className="text-5xl md:text-7xl font-black text-white mb-8 font-orbitron tracking-tighter">
+                  LIGHTS OUT AND<br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-white/40">AWAY WE GO.</span>
+              </h2>
+              <p className="text-lg text-[var(--text-secondary)] mb-12 max-w-xl mx-auto font-light leading-relaxed">
+                 Join the most immersive F1 prediction league on the web. It's free, it's fast, and the paddock is waiting for you.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                 <F1Button href="/login" variant="primary" size="xl" className="shadow-[0_0_60px_rgba(225,6,0,0.4)] hover:shadow-[0_0_90px_rgba(225,6,0,0.6)] px-12 py-5 text-lg">
+                    CREATE FREE ACCOUNT
+                 </F1Button>
+              </div>
           </div>
-        </div>
       </section>
+
     </div>
   );
 }
