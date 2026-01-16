@@ -80,19 +80,17 @@ export default function Navbar() {
           <div className="flex justify-between items-center h-16">
             
             {/* Left: Logo */}
-            <Link href="/" className="flex items-center gap-3 group">
-              {/* Premium Logo Container */}
-              <div className="relative h-12 w-auto flex items-center">
+            <Link href="/" className="flex items-center group">
+              {/* Logo - properly sized for navbar */}
+              <div className="relative h-10 w-32 flex items-center">
                 <Image 
                   src="/logo.png" 
                   alt="F1 Apex Predictions" 
-                  width={180}
-                  height={48}
-                  className="object-contain drop-shadow-[0_0_12px_rgba(220,38,38,0.4)] group-hover:drop-shadow-[0_0_20px_rgba(220,38,38,0.6)] transition-all duration-500"
+                  fill
+                  sizes="128px"
+                  className="object-contain object-left"
                   priority
                 />
-                {/* Subtle glow effect on hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[var(--f1-red)]/0 via-[var(--f1-red)]/5 to-[var(--f1-red)]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg" />
               </div>
             </Link>
 
