@@ -136,7 +136,7 @@ export default function LoginPage() {
               body: JSON.stringify({ email, username })
            }).catch(console.error);
            
-           setMessage({ type: "success", text: "Check your email for the confirmation link!" });
+           setMessage({ type: "success", text: "🏁 Check your email for the confirmation link! Not in inbox? Check your spam folder and add us to contacts." });
         } else {
            setMessage({ type: "error", text: error.message });
         }

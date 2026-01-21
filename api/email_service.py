@@ -15,9 +15,11 @@ from datetime import datetime
 # Initialize Resend
 resend.api_key = os.environ.get("RESEND_API_KEY", "")
 
-# Email configuration
-FROM_EMAIL = os.environ.get("SMTP_FROM_EMAIL", "noreply@apexpredict.live")
-FROM_NAME = os.environ.get("SMTP_FROM_NAME", "F1 Apex")
+# Email configuration - Use a real address for better deliverability
+FROM_EMAIL = os.environ.get("SMTP_FROM_EMAIL", "predictions@apexpredict.live")
+FROM_NAME = os.environ.get("SMTP_FROM_NAME", "F1 Apex Predictions")
+REPLY_TO_EMAIL = os.environ.get("SMTP_REPLY_TO", "support@apexpredict.live")
+UNSUBSCRIBE_URL = "https://apexpredict.live/settings/notifications"
 
 # =============================================================================
 # EMAIL TEMPLATES
@@ -106,7 +108,7 @@ def get_base_template(content: str, title: str = "F1 Apex") -> str:
         </div>
         <div class="footer">
             <p>© {datetime.now().year} F1 Apex | Telemetry Command Center</p>
-            <p>This is an automated message. Please do not reply.</p>
+            <p style="margin-top: 10px;"><a href="https://apexpredict.live/settings/notifications" style="color: #6B7280; text-decoration: underline;">Manage email preferences</a></p>
         </div>
     </div>
 </body>
@@ -234,17 +236,19 @@ def send_email(
     to: str,
     subject: str,
     html_content: str,
+    plain_text: Optional[str] = None,
     reply_to: Optional[str] = None,
     tags: Optional[List[Dict[str, str]]] = None
 ) -> EmailResult:
     """
-    Send an email using Resend.
+    Send an email using Resend with deliverability best practices.
     
     Args:
         to: Recipient email address
         subject: Email subject line
         html_content: HTML content of the email
-        reply_to: Optional reply-to address
+        plain_text: Optional plain text fallback (auto-generated if not provided)
+        reply_to: Optional reply-to address (defaults to REPLY_TO_EMAIL)
         tags: Optional tags for tracking
     
     Returns:
@@ -254,15 +258,27 @@ def send_email(
         return EmailResult(False, "RESEND_API_KEY not configured")
     
     try:
+        # Auto-generate plain text from HTML if not provided
+        if not plain_text:
+            import re
+            # Simple HTML to text conversion
+            text = re.sub(r'<style[^>]*>.*?</style>', '', html_content, flags=re.DOTALL)
+            text = re.sub(r'<[^>]+>', '', text)
+            text = re.sub(r'\s+', ' ', text).strip()
+            plain_text = text
+        
         params = {
             "from": f"{FROM_NAME} <{FROM_EMAIL}>",
             "to": [to],
             "subject": subject,
             "html": html_content,
+            "text": plain_text,  # Plain text for better deliverability
+            "reply_to": reply_to or REPLY_TO_EMAIL,
+            "headers": {
+                "List-Unsubscribe": f"<{UNSUBSCRIBE_URL}>",
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"
+            }
         }
-        
-        if reply_to:
-            params["reply_to"] = reply_to
         
         if tags:
             params["tags"] = tags

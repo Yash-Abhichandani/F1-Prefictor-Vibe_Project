@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./public/developer_pixel_art.png" width="550" alt="Developer Pixel Art"/>
+<img src="https://raw.githubusercontent.com/Abhichandani-Yash-Manish/F1-Prefictor-Vibe_Project/main/public/developer_pixel_art.png" width="550" alt="Developer Pixel Art"/>
 
 <br/>
 
