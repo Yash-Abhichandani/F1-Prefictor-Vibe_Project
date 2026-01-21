@@ -206,6 +206,7 @@ export default function LeaderboardPage() {
 
             {/* Rest of standings */}
             <GlassCard className="overflow-hidden">
+             <div className="overflow-x-auto">
               <div className="p-6 border-b border-[var(--glass-border)] bg-[var(--bg-carbon)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-[var(--accent-gold)] text-xl">📊</span>
@@ -226,70 +227,67 @@ export default function LeaderboardPage() {
                   </Link>
                 </div>
               ) : (
-                <div className="divide-y divide-[var(--glass-border)]">
-                  {standings.map((user, index) => {
-                    const position = index + 1;
-                    const style = getPositionStyle(position);
-                    const isCurrentUser = user.id === currentUserId;
-                    
-                    return (
-                      <div 
-                        key={user.id}
-                        className={`flex items-center gap-6 p-6 transition-all hover:bg-[var(--bg-graphite)] ${
-                          isCurrentUser ? 'bg-[var(--accent-cyan-dim)] border-l-4 border-l-[var(--accent-cyan)]' : 'border-l-4 border-l-transparent'
-                        }`}
-                      >
-                        {/* Position */}
-                        <div className={`w-12 h-12 flex items-center justify-center rounded-xl font-bold font-mono text-lg shrink-0 ${style.badge}`}>
-                          {position <= 3 ? (position === 1 ? '🥇' : position === 2 ? '🥈' : '🥉') : position}
-                        </div>
+                  <table className="w-full min-w-[500px] md:min-w-0">
+                    <thead>
+                      <tr className="bg-[var(--bg-carbon)] text-[var(--text-muted)] text-xs uppercase tracking-wider">
+                        <th className="p-3 md:p-5 text-center border-b border-[var(--glass-border)]">Pos</th>
+                        <th className="p-3 md:p-5 text-left border-b border-[var(--glass-border)]">Racer</th>
+                        <th className="p-3 md:p-5 text-center border-b border-[var(--glass-border)] hidden md:table-cell">Wins</th>
+                        <th className="p-3 md:p-5 text-right border-b border-[var(--glass-border)]">Points</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rest.map((user, index) => {
+                        const position = index + 1;
+                        const style = getPositionStyle(position);
+                        const isCurrentUser = user.id === currentUserId;
                         
-                        {/* User */}
-                        <div className="flex-1 min-w-0">
-                          <Link href={`/profile/${user.id}`} className="block hover:underline">
-                            <div className={`font-bold text-lg truncate ${isCurrentUser ? 'text-[var(--accent-cyan)]' : 'text-white'}`}>
-                                {user.username?.split('@')[0] || 'Anonymous'}
-                                {isCurrentUser && <span className="ml-2 text-sm text-[var(--accent-cyan)] font-normal">(You)</span>}
-                            </div>
-                          </Link>
-                          {user.is_admin && (
-                            <Badge variant="gold" size="sm" icon="⭐" className="mt-1">
-                              TEAM PRINCIPAL
-                            </Badge>
-                          )}
-                        </div>
+                        return (
+                          <tr 
+                            key={user.id}
+                            className={`border-b border-[var(--glass-border)] hover:bg-[var(--bg-graphite)] transition-colors group ${
+                              isCurrentUser ? 'bg-[var(--accent-cyan-dim)] border-l-4 border-l-[var(--accent-cyan)]' : 'border-l-4 border-l-transparent'
+                            }`}
+                          >
+                            <td className="p-3 md:p-5 text-center">
+                              <div className={`w-8 h-8 md:w-12 md:h-12 mx-auto flex items-center justify-center rounded-xl font-bold font-mono text-sm md:text-lg shrink-0 ${style.badge}`}>
+                                {position <= 3 ? (position === 1 ? '🥇' : position === 2 ? '🥈' : '🥉') : position}
+                              </div>
+                            </td>
+                            
+                            <td className="p-3 md:p-5">
+                              <div className="flex items-center gap-3">
+                                <Link href={`/profile/${user.id}`} className="block hover:underline min-w-0">
+                                  <div className={`font-bold text-base md:text-lg truncate max-w-[120px] md:max-w-[200px] ${isCurrentUser ? 'text-[var(--accent-cyan)]' : 'text-white'}`}>
+                                      {user.username?.split('@')[0] || 'Anonymous'}
+                                      {isCurrentUser && <span className="ml-2 text-xs md:text-sm text-[var(--accent-cyan)] font-normal hidden md:inline">(You)</span>}
+                                  </div>
+                                </Link>
+                                {user.is_admin && (
+                                  <Badge variant="gold" size="sm" icon="⭐" className="hidden md:inline-flex">
+                                    PRINCIPAL
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
 
-                        {/* Recent Form (Desktop Only) */}
-                        <div className="hidden md:flex gap-3 w-[120px] justify-center">
-                            {user.last_races && user.last_races.length > 0 ? (
-                                user.last_races.slice(0, 3).map((race, i) => (
-                                    <div key={i} className="flex flex-col items-center">
-                                        <span className="text-[10px] text-[var(--text-muted)] leading-none mb-1">{race.code}</span>
-                                        <span className={`text-sm font-mono font-bold px-2 py-0.5 rounded ${
-                                            race.points >= 20 ? 'text-[var(--status-success)] bg-[var(--status-success)]/10' : 
-                                            race.points >= 10 ? 'text-[var(--accent-gold)] bg-[var(--accent-gold)]/10' : 'text-gray-500'
-                                        }`}>
-                                            {race.points}
-                                        </span>
-                                    </div>
-                                ))
-                            ) : (
-                                <span className="text-[var(--text-subtle)] text-sm opacity-50">-</span>
-                            )}
-                        </div>
-                        
-                        {/* Score */}
-                        <div className="text-right w-24 shrink-0">
-                          <div className={`text-3xl font-black font-mono ${position <= 3 ? style.text : 'text-white'}`}>
-                            {user.total_score}
-                          </div>
-                          <div className="text-xs text-[var(--text-subtle)] uppercase tracking-wider">PTS</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                            <td className="p-3 md:p-5 text-center font-mono text-[var(--text-muted)] group-hover:text-white hidden md:table-cell">
+                                -
+                            </td>
+                            
+                            <td className="p-3 md:p-5 text-right">
+                              <span className={`font-mono text-xl md:text-2xl font-bold ${position <= 3 ? style.text : 'text-white'} group-hover:text-[var(--accent-cyan)]`}>
+                                {user.total_score}
+                              </span>
+                              <div className="text-[10px] text-[var(--text-subtle)] uppercase tracking-wider md:hidden">PTS</div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
               )}
+             </div>
             </GlassCard>
 
             {/* CTA */}
