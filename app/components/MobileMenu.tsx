@@ -13,15 +13,28 @@ interface MobileMenuProps {
 }
 
 export default function MobileMenu({ isOpen, onClose, user, profile, onLogout }: MobileMenuProps) {
-  // Prevent body scroll when open
+  // Prevent body scroll when open - using a safer method for mobile
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden";
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
     } else {
-      document.body.style.overflow = "unset";
+      // Restore scroll position
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
     }
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
     };
   }, [isOpen]);
 
@@ -40,12 +53,20 @@ export default function MobileMenu({ isOpen, onClose, user, profile, onLogout }:
 
   if (!isOpen) return null;
 
+  // Handle close with touch support
+  const handleBackdropClick = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-[100] lg:hidden">
-        {/* Backdrop */}
+        {/* Backdrop - removed backdrop-blur for better mobile performance */}
         <div 
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
-          onClick={onClose}
+          className="absolute inset-0 bg-black/70 animate-fade-in"
+          onClick={handleBackdropClick}
+          onTouchEnd={handleBackdropClick}
         />
         
         {/* Drawer */}

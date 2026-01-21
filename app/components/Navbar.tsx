@@ -22,6 +22,7 @@ export default function Navbar() {
   );
 
   useEffect(() => {
+    // Non-blocking auth check
     const getUser = async () => {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
@@ -30,11 +31,15 @@ export default function Navbar() {
            setUser(null);
            setProfile(null);
            // If there was an error (like User Not Found), clear simple session garbage
-           if (error) await supabase.auth.signOut(); 
+           if (error) {
+             // Don't await signOut - fire and forget to prevent blocking
+             supabase.auth.signOut().then(() => {}, () => {});
+           }
         } else {
            setUser(user);
-           const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-           setProfile(data);
+           // Profile fetch in background
+           supabase.from('profiles').select('*').eq('id', user.id).single()
+             .then(({ data }) => setProfile(data), () => {});
         }
       } catch (err) {
         console.error("Auth exception:", err);
@@ -42,13 +47,19 @@ export default function Navbar() {
         setProfile(null);
       }
     };
-    getUser();
+    
+    // Defer auth check to not block initial render
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(() => getUser());
+    } else {
+      setTimeout(getUser, 0);
+    }
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         setUser(session?.user ?? null);
         if (session?.user) {
-          const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-          setProfile(data);
+          supabase.from('profiles').select('*').eq('id', session.user.id).single()
+            .then(({ data }) => setProfile(data), () => {});
         } else {
           setProfile(null);
         }
@@ -172,7 +183,9 @@ export default function Navbar() {
               {/* Mobile Toggle */}
               <button 
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="lg:hidden text-white"
+                onTouchStart={() => setIsMobileMenuOpen(true)}
+                className="lg:hidden text-white p-2 -m-2 touch-manipulation"
+                aria-label="Open menu"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
