@@ -1,9 +1,16 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import DeveloperModal from "./DeveloperModal";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
+  const [showDevModal, setShowDevModal] = useState(false);
+
   return (
+    <>
     <footer className="relative bg-[var(--bg-midnight)] border-t border-[var(--glass-border)] mt-auto">
       {/* Gold accent line at top */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--accent-gold)]/20 to-transparent" />
@@ -124,17 +131,27 @@ export default function Footer() {
               <span>🏆</span> The Pit Crew
             </h4>
             
-            {/* Lead Developer */}
+            {/* Lead Developer - Custom Interaction */}
             <div className="mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--f1-red)] to-[var(--accent-gold)] flex items-center justify-center text-white font-bold text-sm shadow-lg">
-                  YA
+              <button 
+                onClick={() => setShowDevModal(true)}
+                className="text-left group w-full max-w-sm rounded-xl p-2 -ml-2 hover:bg-white/5 transition-all outline-none"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--f1-red)] to-[var(--accent-gold)] flex items-center justify-center text-white font-bold text-sm shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    YA
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold text-sm flex items-center gap-2">
+                      Yash Abhichandani
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] bg-[var(--accent-gold)] text-black px-1.5 py-0.5 rounded font-bold">
+                        VIEW CARD
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-[var(--accent-gold)] uppercase tracking-wider font-bold">Lead Developer & Founder</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-white font-semibold text-sm">Yash Abhichandani</div>
-                  <div className="text-[10px] text-[var(--accent-gold)] uppercase tracking-wider font-bold">Lead Developer & Founder</div>
-                </div>
-              </div>
+              </button>
             </div>
             
             {/* Divider */}
@@ -191,5 +208,11 @@ export default function Footer() {
         </div>
       </div>
     </footer>
+    
+    <DeveloperModal 
+      isOpen={showDevModal} 
+      onClose={() => setShowDevModal(false)} 
+    />
+    </>
   );
 }

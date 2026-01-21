@@ -19,6 +19,7 @@
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
    NEXT_PUBLIC_API_URL=https://your-backend-url.onrender.com
+   NEXT_PUBLIC_ADSENSE_CLIENT_ID=ca-pub-xxx  # Optional: For Ads
    ```
 7. Click "Deploy"
 
@@ -69,6 +70,7 @@
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
    NEXT_PUBLIC_API_URL=https://your-backend-url.railway.app
+   NEXT_PUBLIC_ADSENSE_CLIENT_ID=ca-pub-xxx
    ```
 10. In Settings:
     - **Root Directory**: `frontend`
@@ -162,6 +164,7 @@
 | `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | `https://xxx.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key | `eyJxxx...` |
 | `NEXT_PUBLIC_API_URL` | Backend API URL | `https://api.yourdomain.com` |
+| `NEXT_PUBLIC_ADSENSE_CLIENT_ID`| AdSense Publisher ID | `ca-pub-xxx` |
 
 ---
 
@@ -178,6 +181,7 @@
 - [ ] Environment variables are set
 - [ ] Custom domain configured (optional)
 - [ ] SSL/HTTPS enabled
+- [ ] **AdSense** verified (if enabled)
 
 ---
 

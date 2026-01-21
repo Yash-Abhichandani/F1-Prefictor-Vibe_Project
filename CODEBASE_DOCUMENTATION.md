@@ -1,7 +1,7 @@
 # 🏎️ F1 Apex — Complete Codebase Documentation
 
 > **Last Updated:** January 21, 2026  
-> **Purpose:** Comprehensive reference for developers working on this project
+> **Version:** 2.0 (Complete Documentation)  
 > **Status:** Production-Ready | 2026 Season
 
 ---
@@ -24,13 +24,16 @@ This document serves as the **single source of truth** for developers. It covers
 │  │                   Next.js 16 App                         │   │
 │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │   │
 │  │  │  Pages   │  │Components│  │   Lib    │              │   │
-│  │  │ (Routes) │  │ (40+)    │  │ (API/DB) │              │   │
+│  │  │(19 routes)│ │  (26+4)  │  │ (API/DB) │              │   │
 │  │  └────┬─────┘  └────┬─────┘  └────┬─────┘              │   │
 │  │       └─────────────┼─────────────┘                     │   │
 │  └─────────────────────┼───────────────────────────────────┘   │
 │                        ▼                                        │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │              Supabase Client (Real-time)                 │   │
+│  │           Integrated Third-Party Services               │   │
+│  │  ├─ Supabase Client (Real-time DB + Auth)              │   │
+│  │  ├─ Vercel Analytics (Traffic + Vitals)                │   │
+│  │  └─ Google AdSense (Monetization)                      │   │
 │  └────────────────────────┬────────────────────────────────┘   │
 └───────────────────────────┼─────────────────────────────────────┘
                             │
@@ -47,138 +50,258 @@ This document serves as the **single source of truth** for developers. It covers
 
 | Technology | Rationale |
 |:-----------|:----------|
-| **Next.js 16** | Latest App Router with React Server Components. Enables streaming, partial prerendering, and edge optimization. |
-| **React 19** | Concurrent features, improved hydration, and enhanced developer experience. |
-| **FastAPI** | Python's fastest web framework. Automatic OpenAPI docs, async support, and Pydantic validation. |
-| **Supabase** | Managed PostgreSQL with built-in auth, real-time subscriptions, and Row Level Security. Zero backend auth code needed. |
-| **Tailwind CSS v4** | Design tokens, responsive utilities, and the new Lightning CSS engine for faster builds. |
-| **Vercel** | Seamless Next.js deployment with automatic preview deployments and edge functions. |
+| **Next.js 16** | Latest App Router with React Server Components. Streaming, partial prerendering, edge optimization. |
+| **React 19** | Concurrent features, improved hydration, enhanced developer experience. |
+| **FastAPI** | Python's fastest web framework. Automatic OpenAPI docs, async support, Pydantic validation. |
+| **Supabase** | Managed PostgreSQL with built-in auth, real-time subscriptions, and Row Level Security. |
+| **Google AdSense** | Reliable, scalable monetization with responsive ad formats. |
+| **Tailwind CSS v4** | Design tokens, responsive utilities, Lightning CSS engine. |
+| **Vercel** | Seamless deployment with automatic preview environments and Python serverless functions. |
 
 ---
 
-## 📁 Project Structure (Deep Dive)
+## 📁 Project Structure
 
 ```
 fl-predictor/
 │
-├── 📂 app/                          # Next.js App Router (all routes)
+├── 📂 app/                          # Next.js App Router
 │   │
-│   ├── 📄 layout.tsx                # Root layout with providers, fonts, analytics
-│   ├── 📄 page.tsx                  # Landing page (Hero, Features, CTA)
-│   ├── 📄 globals.css               # CSS variables, design tokens, base styles
+│   ├── 📄 layout.tsx                # Root layout (fonts, AdSense, analytics)
+│   ├── 📄 page.tsx                  # Landing page (431 lines)
+│   ├── 📄 globals.css               # Design system (1025 lines)
+│   ├── 📄 template.tsx              # Page transitions template
+│   ├── 📄 sitemap.ts                # Dynamic sitemap generator
+│   ├── 📄 robots.ts                 # Robots.txt generator
 │   │
-│   ├── 📂 components/               # Reusable UI components (40+)
-│   │   ├── Navbar.tsx               # Navigation with auth state, mobile menu
-│   │   ├── Footer.tsx               # Site footer with legal links
-│   │   ├── PredictionForm.tsx       # Multi-step prediction form
-│   │   ├── LaunchSequence.tsx       # Race countdown timer (animated)
-│   │   ├── RivalryCard.tsx          # Head-to-head rivalry display
-│   │   ├── LeagueChat.tsx           # Real-time chat with reactions
-│   │   ├── TelemetryBackground.tsx  # Animated canvas background (470+ lines)
-│   │   ├── ConfidenceMeter.tsx      # Prediction confidence indicator
-│   │   ├── WeatherWidget.tsx        # Circuit weather display
-│   │   ├── GlassCard.tsx            # Glassmorphic card component
-│   │   ├── Badge.tsx                # Status badges (team colors)
-│   │   ├── TeamRadioToast.tsx       # Toast notifications (F1 radio style)
-│   │   └── ...                      # 30+ more components
+│   ├── 📂 components/               # 26 Reusable UI Components
+│   │   │
+│   │   │  ── CORE LAYOUT ──
+│   │   ├── Navbar.tsx               # Navigation (7KB) - Auth state, mobile menu
+│   │   ├── Footer.tsx               # Site footer (14KB) - Pit Crew section
+│   │   ├── MobileMenu.tsx           # Responsive mobile nav (6KB)
+│   │   │
+│   │   │  ── VISUAL EFFECTS ──
+│   │   ├── TelemetryBackground.tsx  # Animated canvas (11KB) - 470+ lines
+│   │   ├── TelemetryBgWrapper.tsx   # Client wrapper for background
+│   │   ├── WindTunnelBg.tsx         # Alternative aero background (4KB)
+│   │   ├── TelemetryLoader.tsx      # Loading state with F1 styling (4KB)
+│   │   ├── LoadingSpinner.tsx       # Spinner variants (4KB)
+│   │   │
+│   │   │  ── PREDICTION SYSTEM ──
+│   │   ├── PredictionForm.tsx       # Multi-step form (9KB)
+│   │   ├── LaunchSequence.tsx       # Countdown timer (5KB)
+│   │   ├── ConfidenceMeter.tsx      # Gauge component (4KB)
+│   │   ├── WeatherWidget.tsx        # Circuit weather (8KB)
+│   │   │
+│   │   │  ── SOCIAL FEATURES ──
+│   │   ├── LeagueChat.tsx           # Real-time chat (11KB)
+│   │   ├── RivalryCard.tsx          # H2H display (11KB)
+│   │   ├── GauntletModal.tsx        # Rivalry challenges (8KB)
+│   │   ├── NotificationBell.tsx     # Notification dropdown (7KB)
+│   │   │
+│   │   │  ── MONETIZATION & COMPLIANCE ──
+│   │   ├── AdUnit.tsx               # AdSense container (2KB)
+│   │   ├── CookieConsent.tsx        # GDPR banner (3KB)
+│   │   ├── DeveloperModal.tsx       # LinkedIn badge (4KB)
+│   │   │
+│   │   │  ── NOTIFICATIONS ──
+│   │   ├── TeamRadioToast.tsx       # F1-style toasts (3KB)
+│   │   ├── KeyboardShortcutsHelpWrapper.tsx
+│   │   │
+│   │   └── 📂 ui/                   # Design System Atoms
+│   │       ├── Badge.tsx            # Team-colored badges (1KB)
+│   │       ├── F1Button.tsx         # Button variants (3KB)
+│   │       ├── GlassCard.tsx        # Glassmorphic cards (1KB)
+│   │       └── PageHeader.tsx       # Section headers (1KB)
 │   │
-│   ├── 📂 lib/                      # Shared utilities and data
-│   │   ├── drivers.ts               # Complete 2026 driver grid (22 drivers)
-│   │   ├── supabase.ts              # Supabase browser client
-│   │   └── teams.ts                 # Team colors and metadata
+│   ├── 📂 lib/                      # Shared Utilities
+│   │   ├── drivers.ts               # 2026 driver grid (154 lines, 22 drivers)
+│   │   └── supabase.ts              # Supabase browser client
 │   │
-│   ├── 📂 (routes)/                 # Feature routes
-│   │   ├── 📂 predict/[id]/         # Prediction form (dynamic)
-│   │   ├── 📂 calendar/             # 2026 race calendar
-│   │   ├── 📂 standings/            # Global leaderboard
-│   │   ├── 📂 leagues/              # League management
-│   │   ├── 📂 rivalries/            # Rivalry battles
-│   │   ├── 📂 profile/              # User profiles
-│   │   ├── 📂 admin/                # Admin dashboard (protected)
-│   │   └── ...                      # 15+ feature routes
+│   ├── 📂 hooks/                    # Custom React Hooks
+│   │   └── (keyboard shortcuts, etc.)
 │   │
-│   └── 📄 middleware.ts             # Auth route protection
+│   └── 📂 [routes]/                 # 19 Page Routes
+│       ├── admin/                   # Admin dashboard
+│       ├── auth/                    # Auth callbacks
+│       ├── calendar/                # 2026 race calendar (24 races)
+│       ├── classification/          # Race results
+│       ├── contact/                 # Contact form
+│       ├── friends/                 # Friend management
+│       ├── history/                 # Prediction history
+│       ├── leaderboard/             # Global standings
+│       ├── leagues/                 # League CRUD + chat
+│       ├── login/                   # Authentication
+│       ├── predict/[id]/            # Prediction form (dynamic)
+│       ├── privacy/                 # Privacy policy
+│       ├── profile/                 # User profiles
+│       ├── reset-password/          # Password reset
+│       ├── rivalries/               # H2H rivalries
+│       ├── standings/               # Championship tables
+│       ├── submissions/             # User submissions
+│       └── terms/                   # Terms of service
 │
-├── 📂 api/                          # FastAPI Backend (Vercel Serverless)
+├── 📂 api/                          # FastAPI Backend
 │   ├── index.py                     # Vercel entry point
-│   ├── main.py                      # All API endpoints (1500+ lines)
+│   ├── main.py                      # All endpoints (1500+ lines)
 │   ├── scoring.py                   # Points calculation engine
 │   └── requirements.txt             # Python dependencies
 │
-├── 📂 lib/                          # Root-level shared config
+├── 📂 lib/                          # Root-Level Config
 │   └── config.ts                    # Environment configuration
 │
-├── 📂 public/                       # Static assets
+├── 📂 public/                       # Static Assets
+│   ├── ads.txt                      # AdSense authorization
 │   └── manifest.json                # PWA manifest
 │
-├── 📄 vercel.json                   # Deployment routing config
+├── 📂 backend/                      # Local Development Backend
+│   └── venv/                        # Python virtual environment
+│
+├── 📄 vercel.json                   # Deployment routing
 ├── 📄 tailwind.config.js            # Tailwind customization
 ├── 📄 *.sql                         # Database schema files
+│   ├── database_schema.sql
+│   ├── leagues_schema.sql
+│   ├── friends_and_chat_schema.sql
+│   └── enhancements_schema.sql
+│
 └── 📄 package.json                  # Node dependencies
+```
+
+---
+
+## 🎨 Design System (globals.css)
+
+The design system spans **1025 lines** with 150+ CSS variables.
+
+### Color Tokens
+
+```css
+:root {
+  /* ═══ BACKGROUNDS ═══ */
+  --bg-void: #0B0B0F;        /* Deepest layer */
+  --bg-midnight: #0D1117;    /* Primary background */
+  --bg-onyx: #111114;        /* Secondary background */
+  --bg-carbon: #1A1A1F;      /* Cards */
+  --bg-graphite: #232328;    /* Interactive elements */
+  --bg-slate: #2A2A30;       /* Hover states */
+  
+  /* ═══ ACCENTS ═══ */
+  --f1-red: #E10600;         /* Primary CTA */
+  --accent-cyan: #00E5FF;    /* Links, data highlights */
+  --accent-gold: #C9A962;    /* Premium, achievements */
+  
+  /* ═══ TEXT ═══ */
+  --text-primary: #F0F0F0;   /* Headings */
+  --text-secondary: #9CA3AF; /* Body text */
+  --text-muted: #6B7280;     /* Subtle text */
+  --text-subtle: #4B5563;    /* Disabled */
+  
+  /* ═══ GLASSMORPHISM ═══ */
+  --glass-bg: rgba(17, 17, 20, 0.85);
+  --glass-blur: 24px;
+  --glass-border: rgba(255, 255, 255, 0.06);
+}
+```
+
+### Component Classes
+
+| Class | Purpose |
+|:------|:--------|
+| `.glass-card` | Primary glassmorphic container with hover effects |
+| `.telemetry-panel` | Gradient panel with gold accent line |
+| `.pit-board` | Left-bordered info panel |
+| `.btn-primary` | Red CTA button with glow |
+| `.btn-secondary` | Graphite secondary button |
+| `.btn-gold` | Gold premium button |
+| `.countdown-digit` | Monospace countdown numbers |
+
+### Font Stack
+
+```typescript
+// Loaded in layout.tsx
+const fonts = {
+  display: 'Orbitron',           // Headlines (700-900)
+  heading: 'Geist, Titillium',   // Section headers (600-700)
+  body: 'Geist, Inter',          // Body text (400-500)
+  mono: 'Geist Mono, Roboto Mono' // Data/numbers (400-600)
+};
+```
+
+---
+
+## 💰 Monetization (AdSense)
+
+### Implementation
+
+1. **Script Load** — Async in `app/layout.tsx` `<head>`
+2. **Component** — `app/components/AdUnit.tsx` handles responsive ads
+3. **Authorization** — `public/ads.txt` for seller verification
+
+### Strategic Placements (7 Units)
+
+| Page | Location | Slot Purpose |
+|:-----|:---------|:-------------|
+| Homepage | After Hero | High visibility |
+| Homepage | Before CTA | Exit engagement |
+| Calendar | Between Grid/List | Content break |
+| Leaderboard | After Podium | Natural pause |
+| Standings | Between WDC/WCC | Section break |
+| Rivalries | Before Matchmaking | Content break |
+| History | After 3rd prediction | Conditional inline |
+
+### Environment Variable
+```env
+NEXT_PUBLIC_ADSENSE_CLIENT_ID=ca-pub-2903739336841923
 ```
 
 ---
 
 ## 🗄️ Database Schema
 
-### Entity Relationship Overview
+### Entity Relationships
 
 ```
-┌─────────────┐       ┌─────────────┐       ┌─────────────┐
-│  profiles   │──────<│ predictions │>──────│    races    │
-│  (users)    │       │             │       │ (calendar)  │
-└──────┬──────┘       └─────────────┘       └─────────────┘
-       │
-       ├──────────────────────────────────────────────┐
-       │                                              │
-       ▼                                              ▼
-┌─────────────────┐                          ┌───────────────┐
-│ league_members  │>────────────────────────<│    leagues    │
-└────────┬────────┘                          └───────────────┘
-         │
-         ├─────────────────────┬─────────────────────┐
-         ▼                     ▼                     ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│ league_messages │  │   friendships   │  │   rivalries     │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
+profiles ──< predictions >── races
+    │
+    ├──< league_members >── leagues
+    │         │
+    │         ├──< league_messages
+    │         └──< league_prediction_grades
+    │
+    ├──< friendships
+    ├──< rivalries
+    ├──< user_achievements >── achievements
+    └──< activity_feed
 ```
 
 ### Core Tables
 
 | Table | Purpose | Key Fields |
 |:------|:--------|:-----------|
-| **`profiles`** | Extended user data beyond Supabase auth | `id`, `username`, `avatar_url`, `total_score`, `is_admin`, `favorite_team` |
-| **`races`** | 2026 F1 calendar with all sessions | `id`, `name`, `circuit`, `country`, `quali_time`, `race_time`, `is_sprint`, `fp1_time`, `fp2_time`, `fp3_time`, `sprint_quali_time`, `sprint_time` |
-| **`predictions`** | User predictions per race | `user_id`, `race_id`, `quali_p1/p2/p3_driver`, `race_p1-p10_driver`, `fastest_lap_driver`, `points_total` |
+| `profiles` | User data | `id`, `username`, `total_score`, `is_admin` |
+| `races` | 2026 calendar (24 races) | `id`, `name`, `circuit`, `quali_time`, `race_time`, `fp1/2/3_time`, `sprint_quali_time`, `sprint_time` |
+| `predictions` | User picks | `user_id`, `race_id`, `quali_p1-p3`, `race_p1-p10`, `fastest_lap`, `points_total` |
 
-### League System Tables
-
-| Table | Purpose | Key Relationships |
-|:------|:--------|:------------------|
-| **`leagues`** | League definitions | `owner_id` → `profiles` |
-| **`league_members`** | Memberships with roles | `user_id` → `profiles`, `league_id` → `leagues` |
-| **`league_invites`** | Pending invitations | `inviter_id`, `invitee_id` → `profiles` |
-| **`league_prediction_grades`** | Admin-graded scores | `grader_id`, `prediction_id` |
-
-### Social Tables
+### League System
 
 | Table | Purpose |
 |:------|:--------|
-| **`friendships`** | Friend relationships with status (pending/accepted/declined) |
-| **`league_messages`** | Chat messages per league with real-time subscriptions |
-| **`message_reactions`** | Emoji reactions on chat messages |
-| **`activity_feed`** | Activity log for user feeds |
-| **`achievements`** | Achievement definitions (Oracle, Streak Master, etc.) |
-| **`user_achievements`** | Earned achievements per user |
-| **`rivalries`** | Head-to-head rivalry matchups |
+| `leagues` | League definitions + invite codes |
+| `league_members` | Memberships with roles (admin/member) |
+| `league_messages` | Real-time chat with reactions |
+| `league_prediction_grades` | Manual scoring by admins |
 
-### Row Level Security (RLS)
+### Social Features
 
-Every table has RLS policies. Key patterns:
-- **Profiles:** Users can read all, update their own
-- **Predictions:** Users can read/write their own, admins can read all
-- **Leagues:** Members can read, owners/admins can update
-- **Messages:** League members can read/write
+| Table | Purpose |
+|:------|:--------|
+| `friendships` | Friend relationships (pending/accepted) |
+| `rivalries` | H2H matchups with scores |
+| `achievements` | Badge definitions |
+| `user_achievements` | Earned badges |
+| `activity_feed` | User activity log |
 
 ---
 
@@ -186,333 +309,143 @@ Every table has RLS policies. Key patterns:
 
 ### Base URL
 - **Development:** `http://localhost:3000/api`
-- **Production:** `https://your-domain.vercel.app/api`
+- **Production:** `https://apexpredict.live/api`
 
 ### Authentication
-All authenticated endpoints require a Bearer token:
 ```
 Authorization: Bearer <supabase_access_token>
 ```
 
-### Rate Limiting
-| Endpoint Category | Limit |
-|:-----------------|:------|
-| Public endpoints | 30 req/min |
-| Predictions | 10 req/min |
-| Chat messages | 20 req/min |
+### Rate Limits
+| Category | Limit |
+|:---------|:------|
+| Public | 30/min |
+| Predictions | 10/min |
+| Chat | 20/min |
 
-### Endpoint Reference
+### Endpoints
 
-#### Public Endpoints
-```
-GET  /                    Health check
-GET  /health              Detailed health with database status
-GET  /races               All races (2026 calendar)
-GET  /races/{id}          Single race with session times
-GET  /standings           Global leaderboard (top 100)
-GET  /achievements        All achievement definitions
-```
-
-#### Authenticated Endpoints
-```
-POST /predict             Submit prediction for a race
-GET  /predictions/me      User's own predictions
-GET  /leagues             List user's leagues
-POST /leagues             Create new league
-GET  /leagues/{id}        League details with standings
-POST /leagues/join        Join via invite code
-POST /leagues/{id}/leave  Leave a league
-GET  /friends             Friend list with status
-POST /friends/request     Send friend request
-POST /friends/respond     Accept/decline request
-GET  /leagues/{id}/chat   Get chat messages (paginated)
-POST /leagues/{id}/chat   Send message
-POST /leagues/{id}/chat/{msg_id}/react   Add reaction
-```
-
-#### Admin Endpoints
-```
-GET  /admin/predictions/{race_id}   All predictions for a race
-POST /admin/grade                   Grade a prediction
-POST /admin/settle                  Settle race (calculate points)
-```
-
-### Request/Response Examples
-
-#### Submit Prediction
+#### Public
 ```http
-POST /predict
-Content-Type: application/json
-Authorization: Bearer <token>
-
-{
-  "race_id": 1,
-  "quali_p1_driver": "Verstappen",
-  "quali_p2_driver": "Norris",
-  "quali_p3_driver": "Leclerc",
-  "race_p1_driver": "Verstappen",
-  "race_p2_driver": "Hamilton",
-  "race_p3_driver": "Norris",
-  "fastest_lap_driver": "Verstappen"
-}
+GET  /                    Health check
+GET  /races               All races
+GET  /standings           Global leaderboard (top 100)
+GET  /achievements        Achievement definitions
 ```
 
-#### Response
-```json
-{
-  "success": true,
-  "prediction_id": 42,
-  "message": "Prediction submitted successfully"
-}
+#### Authenticated
+```http
+POST /predict             Submit prediction
+GET  /predictions/me      User's predictions
+POST /leagues             Create league
+GET  /leagues/{id}        League details
+POST /leagues/{id}/chat   Send message
+POST /friends/request     Send friend request
+```
+
+#### Admin
+```http
+GET  /admin/predictions/{race_id}
+POST /admin/grade
+POST /admin/settle
 ```
 
 ---
 
 ## 📊 Scoring Engine
 
-Located in `api/scoring.py`, the scoring system calculates points with these rules:
+Located in `api/scoring.py`:
 
 ```python
-# === QUALIFYING ===
-QUALI_P1 = 5  # Pole position
+# Qualifying
+QUALI_P1 = 5
 QUALI_P2 = 3
 QUALI_P3 = 1
 
-# === RACE ===
-RACE_P1  = 10  # Winner
-RACE_P2  = 8
-RACE_P3  = 6
-RACE_P4  = 5
-RACE_P5  = 4
-RACE_P6  = 3
-RACE_P7  = 2
-RACE_P8  = 1
-RACE_P9  = 1
-RACE_P10 = 1
+# Race
+RACE_P1 = 10
+RACE_P2 = 8
+RACE_P3 = 6
+RACE_P4_P10 = [5, 4, 3, 2, 1, 1, 1]
 
-# === BONUSES ===
-FASTEST_LAP    = 3
-HAT_TRICK      = 2   # Pole + Win
-PODIUM_EXACT   = 5   # P1-P2-P3 exact order
-PODIUM_ANY     = 2   # P1-P2-P3 any order
-
-# === LEAGUE GRADING (Manual) ===
-WILD_PREDICTION   = 0-50  # Admin discretion
-BIGGEST_FLOP      = 0-50
-BIGGEST_SURPRISE  = 0-50
-```
-
----
-
-## 🎨 Design System
-
-### CSS Variables (globals.css)
-
-```css
-:root {
-  /* Backgrounds */
-  --bg-gunmetal: #0D1117;
-  --bg-carbon: #1F2833;
-  --bg-carbon-light: #2A3A4B;
-  
-  /* Accents */
-  --accent-cyan: #00E5FF;
-  --accent-teal: #00BFA5;
-  --signal-red: #FF0000;
-  --f1-red: #E10600;
-  --gold: #C9A962;
-  
-  /* Text */
-  --text-grey: #C5C6C7;
-  --text-silver: #9E9E9E;
-  --text-white: #FFFFFF;
-  
-  /* Gradients */
-  --gradient-cyan: linear-gradient(135deg, #00E5FF 0%, #00BFA5 100%);
-  --gradient-hero: linear-gradient(180deg, #0D1117 0%, #1F2833 100%);
-}
-```
-
-### Font Stack
-
-| Usage | Font | Weight |
-|:------|:-----|:-------|
-| Display/Headers | Orbitron | 700–900 |
-| Subheadings | Titillium Web | 600–700 |
-| Body Text | Inter | 400–500 |
-| Data/Telemetry | Roboto Mono | 400–500 |
-| Code | JetBrains Mono | 400 |
-
-### Component Patterns
-
-**GlassCard** — Glassmorphic container with blur
-```tsx
-<GlassCard variant="default" className="p-6">
-  {children}
-</GlassCard>
-```
-
-**Badge** — Team-colored status indicator
-```tsx
-<Badge team="redbull" variant="outline">
-  P1
-</Badge>
-```
-
-**TeamRadioToast** — F1 radio-style notifications
-```tsx
-showTeamRadio("Prediction saved!", "success");
-```
-
----
-
-## 🔐 Security Checklist
-
-### Production Requirements
-- [ ] Set `ALLOWED_ORIGINS` to production domain
-- [ ] Configure Supabase environment variables on Vercel
-- [ ] Run all SQL schemas in Supabase
-- [ ] Enable RLS on all tables
-- [ ] Verify `is_admin` is set for admin users
-- [ ] Set up rate limiting rules
-
-### Safari Compatibility
-The API client (`lib/api.ts`) includes Safari-specific header sanitization:
-```typescript
-// Headers that cause Safari to fail silently
-const FORBIDDEN_SAFARI_HEADERS = ['content-length'];
+# Bonuses
+FASTEST_LAP = 3
+HAT_TRICK = 2      # Pole + Win
+PODIUM_EXACT = 5   # Exact order
+PODIUM_ANY = 2     # Any order
 ```
 
 ---
 
 ## 🚀 Deployment
 
-### Vercel Configuration (vercel.json)
+### Environment Variables
+
+| Variable | Description |
+|:---------|:------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
+| `NEXT_PUBLIC_API_URL` | API base URL |
+| `NEXT_PUBLIC_ADSENSE_CLIENT_ID` | AdSense publisher ID |
+| `SUPABASE_URL` | Backend Supabase URL |
+| `SUPABASE_KEY` | Service role key |
+
+### Vercel Config (vercel.json)
 ```json
 {
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index.py" }
   ],
   "functions": {
-    "api/index.py": {
-      "runtime": "python3.12"
-    }
+    "api/index.py": { "runtime": "python3.12" }
   }
 }
 ```
 
-### Environment Variables
-| Variable | Where | Description |
-|:---------|:------|:------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Vercel | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Vercel | Supabase anon key |
-| `SUPABASE_URL` | Vercel | Backend Supabase URL |
-| `SUPABASE_KEY` | Vercel | Service role key |
-| `ALLOWED_ORIGINS` | Vercel | CORS allowed domains |
-
-### Monitoring
-- **Vercel Analytics** — Visitor tracking
-- **Speed Insights** — Core Web Vitals
-
 ---
 
-## 🧪 Development Commands
+## 🧪 Development
 
 ```bash
-# Start development server (hot reload)
+# Start dev server
 npm run dev
 
-# Build for production (type-check + bundle)
+# Build production
 npm run build
 
-# Start production server locally
-npm run start
-
-# Run ESLint
+# Run linter
 npm run lint
 
-# Backend (local development)
-cd backend
-pip install -r requirements.txt
+# Local backend
+cd backend && pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
 ---
 
-## 🔄 Data Flow
+## 🔐 Security
 
-### Prediction Submission Flow
-```
-1. User fills PredictionForm.tsx
-         ↓
-2. Client calls POST /predict via lib/api.ts
-         ↓
-3. FastAPI validates with Pydantic model
-         ↓
-4. Backend checks:
-   - User authenticated?
-   - Race exists?
-   - Prediction deadline passed?
-         ↓
-5. Supabase INSERT into predictions table
-         ↓
-6. Success response → Toast notification
-```
-
-### Race Settlement Flow (Admin)
-```
-1. Admin clicks "Settle Race" button
-         ↓
-2. POST /admin/settle { race_id, results }
-         ↓
-3. scoring.py calculates points for each prediction
-         ↓
-4. Batch UPDATE predictions SET points_total
-         ↓
-5. UPDATE profiles SET total_score += points
-         ↓
-6. Leaderboard automatically reflects new standings
-```
+| Feature | Implementation |
+|:--------|:---------------|
+| RLS | All Supabase tables |
+| Pydantic | Input validation |
+| JWT | Token verification |
+| CORS | Origin whitelisting |
+| Cookie Consent | GDPR compliance |
+| Ads.txt | Seller authorization |
 
 ---
 
-## 📚 Additional Resources
+## 📚 Additional Docs
 
-| Document | Purpose |
-|:---------|:--------|
-| `README.md` | User-facing project overview |
-| `DEPLOYMENT.md` | Step-by-step deployment guide |
+| File | Purpose |
+|:-----|:--------|
+| `README.md` | User-facing overview |
+| `DEPLOYMENT.md` | Deployment guide |
 | `FUTURE_ENHANCEMENTS.md` | Planned features |
-| `database_schema.sql` | Core PostgreSQL schema |
-| `leagues_schema.sql` | League system schema |
+| `*.sql` | Database schemas |
 
 ---
 
-## ✅ Quick Reference
-
-### Protected Routes (middleware.ts)
-```
-/predict/*
-/submissions
-/results
-/admin/*
-/profile (authenticated features)
-```
-
-### Key Component Locations
-| What | Where |
-|:-----|:------|
-| Driver Grid Data | `app/lib/drivers.ts` |
-| Team Colors | `app/lib/teams.ts` |
-| API Client | `lib/api.ts` |
-| Environment Config | `lib/config.ts` |
-| Supabase Client | `app/lib/supabase.ts` |
-
----
-
-> **Pro Tip:** When debugging, check the browser console AND the Vercel function logs. Supabase RLS errors often appear only in function logs.
-
----
-
-**Document maintained by the F1 Apex development team.**  
-*Last verified: January 2026*
+**Maintained by the F1 Apex development team.**  
+*Last verified: January 21, 2026*
