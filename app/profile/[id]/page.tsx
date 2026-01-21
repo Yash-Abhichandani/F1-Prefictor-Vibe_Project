@@ -347,21 +347,21 @@ export default function UserProfilePage() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-                <GlassCard className="p-6 text-center">
+                <GlassCard className="p-4 md:p-6 text-center">
                     <div className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-2">Total Score</div>
                     <div className="text-4xl font-bold text-[var(--accent-gold)] font-mono text-glow-gold">{profile.total_score}</div>
                 </GlassCard>
-                <GlassCard className="p-6 text-center">
+                <GlassCard className="p-4 md:p-6 text-center">
                     <div className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-2">Current Streak</div>
                     <div className="text-4xl font-bold text-[var(--f1-red)] font-mono flex items-center justify-center gap-2">
                         {profile.current_streak || 0} <span className="text-xl">🔥</span>
                     </div>
                 </GlassCard>
-                <GlassCard className="p-6 text-center">
+                <GlassCard className="p-4 md:p-6 text-center">
                     <div className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-2">Achievements</div>
                     <div className="text-4xl font-bold text-[var(--accent-cyan)] font-mono">{achievements.length}</div>
                 </GlassCard>
-                <GlassCard className="p-6 text-center">
+                <GlassCard className="p-4 md:p-6 text-center">
                     <div className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-2">Predictions</div>
                     <div className="text-4xl font-bold text-white font-mono">{predictions.length}</div>
                 </GlassCard>
@@ -422,7 +422,7 @@ export default function UserProfilePage() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="p-6 rounded-xl border border-white/5 bg-[var(--bg-surface)] text-center">
+                                <div className="p-4 md:p-6 rounded-xl border border-white/5 bg-[var(--bg-surface)] text-center">
                                     <p className="text-[var(--text-muted)]">{isOwner ? "Not in any leagues yet." : "User is not in any leagues."}</p>
                                     {isOwner && <F1Button href="/leagues" variant="secondary" size="sm" className="mt-3">Find a League</F1Button>}
                                 </div>
@@ -433,7 +433,7 @@ export default function UserProfilePage() {
                     {/* RIGHT COL: Friends & History */}
                     <div className="space-y-8">
                         {/* Friends */}
-                        <GlassCard className="p-6">
+                        <GlassCard className="p-4 md:p-6">
                             <h3 className="text-lg font-bold text-white mb-4 flex items-center justify-between">
                                 <span>👥 PADDOCK</span>
                                 <span className="text-xs font-normal text-[var(--accent-gold)]">{friends.length} Friends</span>
@@ -461,7 +461,7 @@ export default function UserProfilePage() {
                         </GlassCard>
 
                          {/* History */}
-                         <GlassCard className="p-6">
+                         <GlassCard className="p-4 md:p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-bold text-white flex items-center gap-2"><span>📜</span> HISTORY</h3>
                                 <button 
