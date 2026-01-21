@@ -46,6 +46,11 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // Safety timeout to prevent infinite loading
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 5000);
+
     const fetchData = async () => {
       try {
         // 1. Critical Data: Next Race (Supabase - Fast)
@@ -74,6 +79,7 @@ export default function Home() {
         console.error("Critical Data Error:", err);
       } finally {
         setLoading(false);
+        clearTimeout(safetyTimer);
       }
 
       // 2. Secondary Data: Stats & Standings (Parallel)
@@ -115,7 +121,8 @@ export default function Home() {
     };
 
     fetchData();
-    fetchData();
+    
+    return () => clearTimeout(safetyTimer);
   }, []);
 
   // Combined Loading State: Show loader if Animation is running OR critical data is loading
