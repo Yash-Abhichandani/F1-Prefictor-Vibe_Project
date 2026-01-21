@@ -161,44 +161,48 @@ export default function StandingsPage() {
 
             {/* Full Table */}
             <GlassCard className="overflow-hidden">
-              <table className="w-full">
+             <div className="overflow-x-auto">
+              <table className="w-full min-w-[500px] md:min-w-0">
                 <thead>
                   <tr className="bg-[var(--bg-carbon)] text-[var(--text-muted)] text-xs uppercase tracking-wider">
-                    <th className="p-5 text-center border-b border-[var(--glass-border)]">Pos</th>
-                    <th className="p-5 text-left border-b border-[var(--glass-border)]">{view === "drivers" ? "Driver" : "Team"}</th>
-                    {view === "drivers" && <th className="p-5 text-left hidden md:table-cell border-b border-[var(--glass-border)]">Team</th>}
-                    <th className="p-5 text-center border-b border-[var(--glass-border)]">Wins</th>
-                    <th className="p-5 text-right border-b border-[var(--glass-border)]">Points</th>
+                    <th className="p-3 md:p-5 text-center border-b border-[var(--glass-border)]">Pos</th>
+                    <th className="p-3 md:p-5 text-left border-b border-[var(--glass-border)]">{view === "drivers" ? "Driver" : "Team"}</th>
+                    {view === "drivers" && <th className="p-3 md:p-5 text-left hidden md:table-cell border-b border-[var(--glass-border)]">Team</th>}
+                    <th className="p-3 md:p-5 text-center border-b border-[var(--glass-border)]">Wins</th>
+                    <th className="p-3 md:p-5 text-right border-b border-[var(--glass-border)]">Points</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rest.map((item: any) => (
                     <tr key={item.position} className="border-b border-[var(--glass-border)] hover:bg-[var(--bg-graphite)] transition-colors group">
-                      <td className="p-5 text-center font-mono text-xl font-bold text-[var(--text-subtle)] group-hover:text-white">
+                      <td className="p-3 md:p-5 text-center font-mono text-base md:text-xl font-bold text-[var(--text-subtle)] group-hover:text-white">
                         {item.position}
                       </td>
-                      <td className="p-5">
-                        <div className="flex items-center gap-3">
+                      <td className="p-3 md:p-5">
+                        <div className="flex items-center gap-2 md:gap-3">
                           <div className="w-1 h-6 bg-[var(--glass-border)] group-hover:bg-[var(--accent-gold)] transition-colors rounded-full" />
-                          <div>
-                            <span className="font-bold text-white block">{view === "drivers" ? item.Driver.familyName.toUpperCase() : item.Constructor.name.toUpperCase()}</span>
+                          <div className="min-w-0">
+                            <span className="font-bold text-white block text-sm md:text-base truncate max-w-[140px] md:max-w-none">
+                              {view === "drivers" ? item.Driver.familyName.toUpperCase() : item.Constructor.name.toUpperCase()}
+                            </span>
                             {view === "drivers" && (
-                              <span className="text-xs text-[var(--text-muted)]">{item.Driver.givenName}</span>
+                              <span className="text-xs text-[var(--text-muted)] block md:inline text-ellipsis">{item.Driver.givenName}</span>
                             )}
                           </div>
                         </div>
                       </td>
                       {view === "drivers" && (
-                        <td className="p-5 hidden md:table-cell text-[var(--text-muted)] text-sm">{item.Constructors[0].name}</td>
+                        <td className="p-3 md:p-5 hidden md:table-cell text-[var(--text-muted)] text-sm">{item.Constructors[0].name}</td>
                       )}
-                      <td className="p-5 text-center font-mono text-[var(--text-muted)] group-hover:text-white">{item.wins}</td>
-                      <td className="p-5 text-right">
-                        <span className="font-mono text-2xl font-bold text-white group-hover:text-[var(--accent-cyan)]">{item.points}</span>
+                      <td className="p-3 md:p-5 text-center font-mono text-[var(--text-muted)] group-hover:text-white">{item.wins}</td>
+                      <td className="p-3 md:p-5 text-right">
+                        <span className="font-mono text-lg md:text-2xl font-bold text-white group-hover:text-[var(--accent-cyan)]">{item.points}</span>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+             </div>
             </GlassCard>
           </>
         )}
