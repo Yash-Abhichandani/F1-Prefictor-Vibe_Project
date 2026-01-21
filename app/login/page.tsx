@@ -28,13 +28,17 @@ export default function LoginPage() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-         if (session) {
+        // Enforce 3s timeout on session check to prevent hanging
+        const { data } = await withTimeout(supabase.auth.getSession(), 3000);
+         if (data?.session) {
             router.push('/');
          } else {
             setCheckingSession(false);
          }
       } catch (error) {
+         // If check hangs/fails, force clear state to "reset" the confused browser
+         console.warn("Session check failed, forcing purge...", error);
+         await supabase.auth.signOut(); 
          setCheckingSession(false);
       }
     };
