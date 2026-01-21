@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Inter, Orbitron, JetBrains_Mono, Titillium_Web, Roboto_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { TeamRadioProvider } from "./components/TeamRadioToast";
@@ -94,6 +95,7 @@ export default function RootLayout({
           {/* Keyboard Shortcuts Help */}
           <KeyboardShortcutsHelpWrapper />
           <Analytics />
+          <SpeedInsights />
         </TeamRadioProvider>
       </body>
     </html>
