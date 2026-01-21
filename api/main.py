@@ -1464,6 +1464,134 @@ def get_user_profile(request: Request, target_user_id: str):
 def health_check():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
+
+# =============================================
+# FEEDBACK & EMAIL ROUTES
+# =============================================
+
+# Import email service
+try:
+    from email_service import (
+        send_welcome_email,
+        send_race_reminder,
+        send_feedback_receipt,
+        send_league_invite,
+        send_rivalry_challenge
+    )
+    EMAIL_SERVICE_AVAILABLE = True
+except ImportError:
+    EMAIL_SERVICE_AVAILABLE = False
+    logger.warning("Email service not available")
+
+
+class FeedbackInput(BaseModel):
+    """Feedback form input model."""
+    email: str
+    name: Optional[str] = None
+    subject: str
+    message: str
+    category: str = "general"
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        if not v or not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', v):
+            raise ValueError('Invalid email address')
+        return v
+    
+    @field_validator('message')
+    @classmethod
+    def validate_message(cls, v: str) -> str:
+        if not v or len(v.strip()) < 10:
+            raise ValueError('Message must be at least 10 characters')
+        if len(v) > 5000:
+            raise ValueError('Message too long (max 5000 characters)')
+        return re.sub(r'[<>]', '', v)
+
+
+@app.post("/feedback")
+@limiter.limit("5/minute")
+def submit_feedback(request: Request, feedback: FeedbackInput):
+    """Submit feedback from contact form."""
+    try:
+        # Store feedback in database
+        feedback_data = {
+            "email": feedback.email,
+            "name": feedback.name,
+            "subject": feedback.subject,
+            "message": feedback.message,
+            "category": feedback.category,
+            "status": "pending"
+        }
+        
+        result = supabase.table("feedback").insert(feedback_data).execute()
+        
+        # Send confirmation email
+        if EMAIL_SERVICE_AVAILABLE:
+            send_feedback_receipt(
+                to=feedback.email,
+                name=feedback.name or "User",
+                subject=feedback.subject
+            )
+        
+        return {
+            "success": True,
+            "message": "Thank you for your feedback! We'll get back to you soon."
+        }
+    except Exception as e:
+        logger.error(f"Feedback submission error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/admin/feedback")
+@limiter.limit("20/minute")
+def get_all_feedback(request: Request, admin_id: str = Depends(verify_admin)):
+    """Get all feedback (admin only)."""
+    try:
+        result = supabase.table("feedback").select("*").order("created_at", desc=True).execute()
+        return {"feedback": result.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/admin/feedback/{feedback_id}")
+@limiter.limit("20/minute")
+def update_feedback_status(
+    request: Request, 
+    feedback_id: int, 
+    status: str,
+    admin_id: str = Depends(verify_admin)
+):
+    """Update feedback status (admin only)."""
+    valid_statuses = ["pending", "reviewed", "resolved", "spam"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Status must be one of: {valid_statuses}")
+    
+    try:
+        result = supabase.table("feedback").update({"status": status}).eq("id", feedback_id).execute()
+        return {"success": True, "message": "Feedback status updated"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# --- TEST EMAIL ENDPOINT (Development only) ---
+@app.post("/admin/test-email")
+@limiter.limit("3/minute")
+def test_email(request: Request, email: str, admin_id: str = Depends(verify_admin)):
+    """Send a test email to verify SMTP configuration (admin only)."""
+    if not EMAIL_SERVICE_AVAILABLE:
+        raise HTTPException(status_code=500, detail="Email service not configured")
+    
+    try:
+        result = send_welcome_email(to=email, username="Test User")
+        if result.success:
+            return {"success": True, "message": f"Test email sent to {email}", "email_id": result.email_id}
+        else:
+            raise HTTPException(status_code=500, detail=result.message)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # --- SERVER STARTUP ---
 if __name__ == "__main__":
     import uvicorn

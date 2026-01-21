@@ -157,6 +157,9 @@
 |----------|-------------|---------|
 | `SUPABASE_URL` | Your Supabase project URL | `https://xxx.supabase.co` |
 | `SUPABASE_KEY` | Service role key (secret!) | `eyJxxx...` |
+| `RESEND_API_KEY` | Resend email API key | `re_xxx...` |
+| `SMTP_FROM_EMAIL` | Sender email (must be verified in Resend) | `noreply@yourdomain.com` |
+| `SMTP_FROM_NAME` | Sender display name | `F1 Apex` |
 
 ### Frontend (`.env.local`)
 | Variable | Description | Example |
@@ -165,6 +168,13 @@
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key | `eyJxxx...` |
 | `NEXT_PUBLIC_API_URL` | Backend API URL | `https://api.yourdomain.com` |
 | `NEXT_PUBLIC_ADSENSE_CLIENT_ID`| AdSense Publisher ID | `ca-pub-xxx` |
+
+### Setting Up Resend (Email Service)
+1. Go to [resend.com](https://resend.com) and create a free account
+2. Verify your domain or use their test domain
+3. Get your API key from the dashboard
+4. Add `RESEND_API_KEY` to Vercel environment variables
+5. Run `feedback_schema.sql` in Supabase SQL Editor
 
 ---
 
