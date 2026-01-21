@@ -1574,6 +1574,7 @@ def update_feedback_status(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+
 # --- TEST EMAIL ENDPOINT (Development only) ---
 @app.post("/admin/test-email")
 @limiter.limit("3/minute")
@@ -1590,6 +1591,697 @@ def test_email(request: Request, email: str, admin_id: str = Depends(verify_admi
             raise HTTPException(status_code=500, detail=result.message)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================
+# STREAK ROUTES
+# =============================================
+
+@app.get("/users/{user_id}/streak")
+@limiter.limit("30/minute")
+def get_user_streak(request: Request, user_id: str):
+    """Get user's current and best streak."""
+    try:
+        profile = supabase.table("profiles").select(
+            "current_streak, best_streak"
+        ).eq("id", user_id).single().execute()
+        
+        if not profile.data:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        from scoring import calculate_streak_multiplier
+        current = profile.data.get("current_streak", 0)
+        
+        return {
+            "current_streak": current,
+            "best_streak": profile.data.get("best_streak", 0),
+            "multiplier": calculate_streak_multiplier(current),
+            "next_threshold": 3 if current < 3 else (5 if current < 5 else None),
+            "is_on_fire": current >= 3
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================
+# PREDICTION TEMPLATE ROUTES
+# =============================================
+
+class TemplateInput(BaseModel):
+    name: str
+    positions: dict
+
+@app.get("/templates")
+@limiter.limit("30/minute")
+def get_templates(request: Request, user_id: Optional[str] = None):
+    """Get global templates and optionally user's custom templates."""
+    try:
+        # Get global templates
+        global_templates = supabase.table("prediction_templates").select("*").eq("is_global", True).execute()
+        
+        result = {"global": global_templates.data, "user": []}
+        
+        # Get user templates if user_id provided
+        if user_id:
+            user_templates = supabase.table("prediction_templates").select("*").eq("user_id", user_id).execute()
+            result["user"] = user_templates.data
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/templates/standings")
+@limiter.limit("30/minute")
+def get_standings_template(request: Request):
+    """Generate template based on current WDC standings."""
+    try:
+        # Get top drivers from standings
+        standings = supabase.table("profiles").select("username, total_score").order("total_score", desc=True).limit(10).execute()
+        
+        # For F1 standings, we'd use actual F1 API data
+        # For now, return default championship order
+        default_order = [
+            "Max Verstappen (Red Bull)",
+            "Lando Norris (McLaren)",
+            "Charles Leclerc (Ferrari)",
+            "Oscar Piastri (McLaren)",
+            "Lewis Hamilton (Ferrari)",
+            "George Russell (Mercedes)",
+            "Carlos Sainz (Williams)",
+            "Fernando Alonso (Aston Martin)",
+            "Nico Hulkenberg (Sauber)",
+            "Yuki Tsunoda (RB)"
+        ]
+        
+        return {
+            "name": "Current WDC Standings",
+            "template_type": "standings",
+            "positions": {
+                "quali_p1_driver": default_order[0],
+                "quali_p2_driver": default_order[1],
+                "quali_p3_driver": default_order[2],
+                "race_p1_driver": default_order[0],
+                "race_p2_driver": default_order[1],
+                "race_p3_driver": default_order[2],
+                "fastest_lap_driver": default_order[0]
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/templates/last-race")
+@limiter.limit("30/minute")
+def get_last_race_template(request: Request, user_id: str = Depends(verify_user)):
+    """Get user's last race prediction as a template."""
+    try:
+        last_pred = supabase.table("predictions").select("*").eq(
+            "user_id", user_id
+        ).order("created_at", desc=True).limit(1).execute()
+        
+        if not last_pred.data:
+            raise HTTPException(status_code=404, detail="No previous predictions found")
+        
+        pred = last_pred.data[0]
+        return {
+            "name": "Your Last Prediction",
+            "template_type": "last-race",
+            "positions": {
+                "quali_p1_driver": pred.get("quali_p1_driver"),
+                "quali_p2_driver": pred.get("quali_p2_driver"),
+                "quali_p3_driver": pred.get("quali_p3_driver"),
+                "race_p1_driver": pred.get("race_p1_driver"),
+                "race_p2_driver": pred.get("race_p2_driver"),
+                "race_p3_driver": pred.get("race_p3_driver")
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/templates")
+@limiter.limit("10/minute")
+def save_template(request: Request, template: TemplateInput, user_id: str = Depends(verify_user)):
+    """Save a custom prediction template."""
+    try:
+        result = supabase.table("prediction_templates").insert({
+            "name": template.name,
+            "template_type": "custom",
+            "positions": template.positions,
+            "user_id": user_id,
+            "is_global": False
+        }).execute()
+        
+        return {"success": True, "template": result.data[0] if result.data else None}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# =============================================
+# ANALYTICS ROUTES
+# =============================================
+
+@app.get("/analytics/me")
+@limiter.limit("20/minute")
+def get_my_analytics(request: Request, user_id: str = Depends(verify_user)):
+    """Get personal prediction analytics."""
+    try:
+        # Get user's predictions with race info
+        predictions = supabase.table("predictions").select(
+            "*, races(name, circuit)"
+        ).eq("user_id", user_id).execute()
+        
+        if not predictions.data:
+            return {
+                "total_predictions": 0,
+                "accuracy_percentage": 0,
+                "accuracy_by_driver": {},
+                "accuracy_by_circuit": {},
+                "average_points": 0
+            }
+        
+        preds = predictions.data
+        total = len(preds)
+        total_points = sum(p.get("points_total", 0) or 0 for p in preds)
+        
+        # Count correct P1 predictions (simplified)
+        correct_p1 = sum(1 for p in preds if p.get("points_total", 0) and p.get("points_total", 0) >= 10)
+        
+        return {
+            "total_predictions": total,
+            "total_points": total_points,
+            "average_points": round(total_points / total, 2) if total > 0 else 0,
+            "correct_p1_rate": round(correct_p1 / total * 100, 1) if total > 0 else 0,
+            "accuracy_by_driver": {},  # Would require more complex analysis
+            "accuracy_by_circuit": {}
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/analytics/global")
+@limiter.limit("30/minute")
+def get_global_analytics(request: Request):
+    """Get global prediction statistics."""
+    try:
+        # Get aggregate stats
+        all_preds = supabase.table("predictions").select("points_total").execute()
+        all_users = supabase.table("profiles").select("id", count="exact").execute()
+        
+        points = [p.get("points_total", 0) or 0 for p in all_preds.data]
+        
+        return {
+            "total_predictions": len(points),
+            "total_users": all_users.count or 0,
+            "average_points_per_prediction": round(sum(points) / len(points), 2) if points else 0,
+            "highest_single_race": max(points) if points else 0
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================
+# CIRCUIT DATA ROUTES
+# =============================================
+
+@app.get("/circuits")
+@limiter.limit("30/minute")
+def get_all_circuits(request: Request):
+    """Get all circuit data."""
+    try:
+        circuits = supabase.table("circuit_data").select("*").execute()
+        return {"circuits": circuits.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/circuits/{circuit_id}")
+@limiter.limit("60/minute")
+def get_circuit(request: Request, circuit_id: int):
+    """Get single circuit details."""
+    try:
+        circuit = supabase.table("circuit_data").select("*").eq("id", circuit_id).single().execute()
+        if not circuit.data:
+            raise HTTPException(status_code=404, detail="Circuit not found")
+        return circuit.data
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================
+# NOTIFICATION PREFERENCES ROUTES
+# =============================================
+
+@app.get("/notifications/preferences")
+@limiter.limit("30/minute")
+def get_notification_preferences(request: Request, user_id: str = Depends(verify_user)):
+    """Get user's notification preferences."""
+    try:
+        prefs = supabase.table("notification_preferences").select("*").eq("user_id", user_id).single().execute()
+        
+        if not prefs.data:
+            # Return defaults if not set
+            return {
+                "race_reminders": True,
+                "friend_requests": True,
+                "rivalry_updates": True,
+                "results_announcements": True,
+                "league_activity": True,
+                "weekly_digest": False
+            }
+        
+        return prefs.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class NotificationPrefsInput(BaseModel):
+    race_reminders: Optional[bool] = None
+    friend_requests: Optional[bool] = None
+    rivalry_updates: Optional[bool] = None
+    results_announcements: Optional[bool] = None
+    league_activity: Optional[bool] = None
+    weekly_digest: Optional[bool] = None
+
+
+@app.patch("/notifications/preferences")
+@limiter.limit("20/minute")
+def update_notification_preferences(
+    request: Request, 
+    prefs: NotificationPrefsInput,
+    user_id: str = Depends(verify_user)
+):
+    """Update notification preferences."""
+    try:
+        update_data = {k: v for k, v in prefs.dict().items() if v is not None}
+        
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No preferences to update")
+        
+        # Upsert preferences
+        result = supabase.table("notification_preferences").upsert({
+            "user_id": user_id,
+            **update_data
+        }).execute()
+        
+        return {"success": True, "preferences": result.data[0] if result.data else None}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+class PushSubscriptionInput(BaseModel):
+    endpoint: str
+    keys: dict
+
+
+@app.post("/notifications/subscribe")
+@limiter.limit("10/minute")
+def subscribe_push(request: Request, sub: PushSubscriptionInput, user_id: str = Depends(verify_user)):
+    """Register push notification subscription."""
+    try:
+        result = supabase.table("push_subscriptions").upsert({
+            "user_id": user_id,
+            "endpoint": sub.endpoint,
+            "keys": sub.keys
+        }).execute()
+        
+        return {"success": True, "message": "Push notifications enabled"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.delete("/notifications/unsubscribe")
+@limiter.limit("10/minute")
+def unsubscribe_push(request: Request, user_id: str = Depends(verify_user)):
+    """Remove push notification subscription."""
+    try:
+        supabase.table("push_subscriptions").delete().eq("user_id", user_id).execute()
+        return {"success": True, "message": "Push notifications disabled"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# =============================================
+# LIVE RACE MODE ROUTES
+# =============================================
+
+@app.get("/live/current")
+@limiter.limit("60/minute")
+def get_current_live_session(request: Request):
+    """Get current live session if any."""
+    try:
+        session = supabase.table("live_sessions").select(
+            "*, races(name, circuit)"
+        ).eq("status", "live").order("started_at", desc=True).limit(1).execute()
+        
+        if not session.data:
+            return {"active": False, "session": None}
+        
+        return {"active": True, "session": session.data[0]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/live/positions")
+@limiter.limit("120/minute")  # Higher limit for live data
+def get_live_positions(request: Request, session_id: Optional[int] = None):
+    """Get current positions for live session."""
+    try:
+        if session_id:
+            positions = supabase.table("live_positions").select("*").eq(
+                "session_id", session_id
+            ).order("position").execute()
+        else:
+            # Get positions for current live session
+            current = supabase.table("live_sessions").select("id").eq("status", "live").limit(1).execute()
+            if not current.data:
+                return {"positions": [], "session_active": False}
+            
+            positions = supabase.table("live_positions").select("*").eq(
+                "session_id", current.data[0]["id"]
+            ).order("position").execute()
+        
+        return {"positions": positions.data, "session_active": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class LiveSessionInput(BaseModel):
+    race_id: int
+    session_type: str  # FP1, FP2, FP3, Qualifying, Sprint, Race
+
+
+@app.post("/admin/live/start")
+@limiter.limit("5/minute")
+def start_live_session(request: Request, session: LiveSessionInput, admin_id: str = Depends(verify_admin)):
+    """Start a live session (admin only)."""
+    try:
+        # End any existing live sessions
+        supabase.table("live_sessions").update({"status": "finished"}).eq("status", "live").execute()
+        
+        # Create new live session
+        result = supabase.table("live_sessions").insert({
+            "race_id": session.race_id,
+            "session_type": session.session_type,
+            "status": "live",
+            "started_at": datetime.now(timezone.utc).isoformat()
+        }).execute()
+        
+        return {"success": True, "session": result.data[0] if result.data else None}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/admin/live/end")
+@limiter.limit("5/minute")
+def end_live_session(request: Request, session_id: int, admin_id: str = Depends(verify_admin)):
+    """End a live session (admin only)."""
+    try:
+        result = supabase.table("live_sessions").update({
+            "status": "finished",
+            "ended_at": datetime.now(timezone.utc).isoformat()
+        }).eq("id", session_id).execute()
+        
+        return {"success": True, "message": "Session ended"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+class PositionUpdateInput(BaseModel):
+    session_id: int
+    positions: List[dict]  # [{driver, position, gap_to_leader, ...}]
+
+
+@app.post("/admin/live/update")
+@limiter.limit("60/minute")  # High limit for frequent updates
+def update_live_positions(request: Request, update: PositionUpdateInput, admin_id: str = Depends(verify_admin)):
+    """Update live positions (admin only)."""
+    try:
+        # Delete old positions for this session
+        supabase.table("live_positions").delete().eq("session_id", update.session_id).execute()
+        
+        # Insert new positions
+        for pos in update.positions:
+            pos["session_id"] = update.session_id
+        
+        result = supabase.table("live_positions").insert(update.positions).execute()
+        
+        return {"success": True, "updated": len(update.positions)}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# =============================================
+# FANTASY TEAM ROUTES
+# =============================================
+
+@app.get("/fantasy/drivers")
+@limiter.limit("30/minute")
+def get_fantasy_drivers(request: Request, season: int = 2026):
+    """Get all drivers with prices for fantasy mode."""
+    try:
+        drivers = supabase.table("driver_prices").select("*").eq("season", season).order("price", desc=True).execute()
+        return {"drivers": drivers.data, "season": season}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/fantasy/team")
+@limiter.limit("30/minute")
+def get_fantasy_team(request: Request, user_id: str = Depends(verify_user), season: int = 2026):
+    """Get user's fantasy team."""
+    try:
+        team = supabase.table("fantasy_teams").select("*").eq("user_id", user_id).eq("season", season).single().execute()
+        
+        if not team.data:
+            return {"has_team": False, "team": None, "drivers": []}
+        
+        drivers = supabase.table("fantasy_team_drivers").select("*").eq("team_id", team.data["id"]).execute()
+        
+        return {
+            "has_team": True,
+            "team": team.data,
+            "drivers": drivers.data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class FantasyTeamInput(BaseModel):
+    team_name: Optional[str] = None
+    drivers: List[str]  # List of driver names
+
+
+@app.post("/fantasy/team")
+@limiter.limit("5/minute")
+def create_fantasy_team(request: Request, team_input: FantasyTeamInput, user_id: str = Depends(verify_user), season: int = 2026):
+    """Create or update fantasy team."""
+    try:
+        if len(team_input.drivers) != 5:
+            raise HTTPException(status_code=400, detail="Must select exactly 5 drivers")
+        
+        # Get driver prices
+        prices = supabase.table("driver_prices").select("driver, price").eq("season", season).execute()
+        price_map = {p["driver"]: p["price"] for p in prices.data}
+        
+        # Calculate total cost
+        total_cost = sum(price_map.get(d, 10.0) for d in team_input.drivers)
+        budget = 100.0
+        
+        if total_cost > budget:
+            raise HTTPException(status_code=400, detail=f"Team cost ({total_cost}) exceeds budget ({budget})")
+        
+        # Check if team exists
+        existing = supabase.table("fantasy_teams").select("id").eq("user_id", user_id).eq("season", season).execute()
+        
+        if existing.data:
+            team_id = existing.data[0]["id"]
+            # Update existing team
+            supabase.table("fantasy_teams").update({
+                "team_name": team_input.team_name,
+                "budget_remaining": budget - total_cost
+            }).eq("id", team_id).execute()
+            
+            # Delete old drivers
+            supabase.table("fantasy_team_drivers").delete().eq("team_id", team_id).execute()
+        else:
+            # Create new team
+            new_team = supabase.table("fantasy_teams").insert({
+                "user_id": user_id,
+                "season": season,
+                "team_name": team_input.team_name,
+                "budget_remaining": budget - total_cost
+            }).execute()
+            team_id = new_team.data[0]["id"]
+        
+        # Add drivers
+        driver_data = [
+            {"team_id": team_id, "driver": d, "cost": price_map.get(d, 10.0)}
+            for d in team_input.drivers
+        ]
+        supabase.table("fantasy_team_drivers").insert(driver_data).execute()
+        
+        return {
+            "success": True,
+            "team_id": team_id,
+            "total_cost": total_cost,
+            "budget_remaining": budget - total_cost
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/fantasy/leaderboard")
+@limiter.limit("30/minute")
+def get_fantasy_leaderboard(request: Request, season: int = 2026):
+    """Get fantasy league standings."""
+    try:
+        standings = supabase.table("fantasy_teams").select(
+            "user_id, team_name, total_points, profiles(username)"
+        ).eq("season", season).order("total_points", desc=True).limit(100).execute()
+        
+        return {"standings": standings.data, "season": season}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class TransferInput(BaseModel):
+    driver_out: str
+    driver_in: str
+
+
+@app.post("/fantasy/transfer")
+@limiter.limit("5/minute")
+def make_fantasy_transfer(request: Request, transfer: TransferInput, user_id: str = Depends(verify_user), season: int = 2026):
+    """Make a fantasy team transfer."""
+    try:
+        # Get user's team
+        team = supabase.table("fantasy_teams").select("*").eq("user_id", user_id).eq("season", season).single().execute()
+        
+        if not team.data:
+            raise HTTPException(status_code=404, detail="No fantasy team found")
+        
+        team_id = team.data["id"]
+        budget_remaining = team.data.get("budget_remaining", 0)
+        
+        # Get current drivers
+        current_drivers = supabase.table("fantasy_team_drivers").select("driver").eq("team_id", team_id).execute()
+        current_list = [d["driver"] for d in current_drivers.data]
+        
+        if transfer.driver_out not in current_list:
+            raise HTTPException(status_code=400, detail="Driver not in your team")
+        
+        if transfer.driver_in in current_list:
+            raise HTTPException(status_code=400, detail="Driver already in your team")
+        
+        # Get prices
+        prices = supabase.table("driver_prices").select("driver, price").eq("season", season).in_("driver", [transfer.driver_out, transfer.driver_in]).execute()
+        price_map = {p["driver"]: p["price"] for p in prices.data}
+        
+        cost_out = price_map.get(transfer.driver_out, 0)
+        cost_in = price_map.get(transfer.driver_in, 10.0)
+        cost_diff = cost_in - cost_out
+        
+        if cost_diff > budget_remaining:
+            raise HTTPException(status_code=400, detail="Insufficient budget for this transfer")
+        
+        # Execute transfer
+        supabase.table("fantasy_team_drivers").delete().eq("team_id", team_id).eq("driver", transfer.driver_out).execute()
+        supabase.table("fantasy_team_drivers").insert({
+            "team_id": team_id,
+            "driver": transfer.driver_in,
+            "cost": cost_in
+        }).execute()
+        
+        # Update budget
+        new_budget = budget_remaining - cost_diff
+        supabase.table("fantasy_teams").update({"budget_remaining": new_budget}).eq("id", team_id).execute()
+        
+        # Log transfer
+        supabase.table("fantasy_transfers").insert({
+            "team_id": team_id,
+            "driver_out": transfer.driver_out,
+            "driver_in": transfer.driver_in,
+            "cost_difference": cost_diff
+        }).execute()
+        
+        return {
+            "success": True,
+            "driver_out": transfer.driver_out,
+            "driver_in": transfer.driver_in,
+            "budget_remaining": new_budget
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# =============================================
+# USER PREFERENCES ROUTES
+# =============================================
+
+@app.get("/users/me/preferences")
+@limiter.limit("30/minute")
+def get_user_preferences(request: Request, user_id: str = Depends(verify_user)):
+    """Get user preferences."""
+    try:
+        profile = supabase.table("profiles").select("preferences").eq("id", user_id).single().execute()
+        
+        default_prefs = {
+            "theme": "dark",
+            "notifications": True,
+            "publicProfile": True,
+            "showStreak": True,
+            "compactMode": False
+        }
+        
+        if not profile.data or not profile.data.get("preferences"):
+            return default_prefs
+        
+        return {**default_prefs, **profile.data.get("preferences", {})}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class UserPrefsInput(BaseModel):
+    theme: Optional[str] = None
+    notifications: Optional[bool] = None
+    publicProfile: Optional[bool] = None
+    showStreak: Optional[bool] = None
+    compactMode: Optional[bool] = None
+
+
+@app.patch("/users/me/preferences")
+@limiter.limit("20/minute")
+def update_user_preferences(request: Request, prefs: UserPrefsInput, user_id: str = Depends(verify_user)):
+    """Update user preferences."""
+    try:
+        # Get current preferences
+        profile = supabase.table("profiles").select("preferences").eq("id", user_id).single().execute()
+        current_prefs = profile.data.get("preferences", {}) if profile.data else {}
+        
+        # Merge with new preferences
+        update_data = {k: v for k, v in prefs.dict().items() if v is not None}
+        merged_prefs = {**current_prefs, **update_data}
+        
+        # Update
+        result = supabase.table("profiles").update({"preferences": merged_prefs}).eq("id", user_id).execute()
+        
+        return {"success": True, "preferences": merged_prefs}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # --- SERVER STARTUP ---
