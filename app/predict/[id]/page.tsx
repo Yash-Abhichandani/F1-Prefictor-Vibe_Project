@@ -40,9 +40,14 @@ export default function PredictPage() {
             </div>
             <div className="text-right mt-6 md:mt-0">
                 <span className="block text-xs text-red-500 font-bold uppercase tracking-widest mb-2">Prediction Deadline</span>
-                <span className="text-2xl font-mono text-white font-bold bg-[#1F2833] px-6 py-3 rounded-lg border border-gray-700 shadow-lg">
-                    {new Date(race.race_time).toLocaleString()}
-                </span>
+                <div className="bg-[#1F2833] px-6 py-3 rounded-lg border border-gray-700 shadow-lg flex flex-col items-center md:items-end">
+                    <span className="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
+                        {new Date(race.race_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </span>
+                    <span className="text-2xl md:text-3xl font-mono text-white font-black leading-none">
+                        {new Date(race.race_time).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                </div>
             </div>
         </div>
 

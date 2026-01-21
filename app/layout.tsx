@@ -90,7 +90,7 @@ export default function RootLayout({
           {/* Telemetry Network Background - Reactive Canvas */}
           <TelemetryBgWrapper />
           <Navbar />
-          <main className="flex-grow relative z-10">{children}</main>
+          <main className="flex-grow relative z-10 pt-24">{children}</main>
           <Footer />
           {/* Keyboard Shortcuts Help */}
           <KeyboardShortcutsHelpWrapper />

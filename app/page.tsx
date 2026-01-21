@@ -143,7 +143,7 @@ export default function Home() {
       </div>
 
       {/* === HERO SECTION === */}
-      <section className="relative pt-36 pb-24 md:pt-48 md:pb-40 border-b border-white/5 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/5 via-transparent to-transparent z-10">
+      <section className="relative pt-12 pb-24 md:pt-24 md:pb-40 border-b border-white/5 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/5 via-transparent to-transparent z-10">
         <div className="max-w-7xl mx-auto px-6 relative">
           
           <div className="flex flex-col lg:flex-row items-end justify-between gap-16 lg:gap-8">
