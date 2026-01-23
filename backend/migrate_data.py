@@ -65,9 +65,14 @@ def get_or_create_user(email):
     # 2. If not in profile, check Auth via Admin API
     print(f"   👤 Creating/Fetching account for {email}...")
     try:
+        # Generate a secure random password (user will need to reset)
+        import secrets
+        import string
+        secure_password = ''.join(secrets.choice(string.ascii_letters + string.digits + "!@#$%") for _ in range(16))
+        
         auth_res = supabase.auth.admin.create_user({
             "email": email,
-            "password": "welcome123",
+            "password": secure_password,
             "email_confirm": True
         })
         return auth_res.user.id

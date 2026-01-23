@@ -9,6 +9,10 @@ import os
 import re
 from scoring import calculate_points
 
+# Import new live F1 routers
+from live_f1 import router as live_router
+from analytics_f1 import router as analytics_router
+
 # Rate limiting imports
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address

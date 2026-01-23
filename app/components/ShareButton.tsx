@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Share2, Link as LinkIcon, Check, Copy } from "lucide-react";
+import { Share2, Check, Copy } from "lucide-react";
 import { teamRadio } from "./TeamRadioToast";
 
 interface ShareButtonProps {

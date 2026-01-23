@@ -1,424 +1,79 @@
-# 🎨 F1 Apex — Frontend Specification Document
-
-> **Purpose:** Handoff document for frontend developers  
-> **Backend Contact:** Refer to `implementation_plan.md` for API contracts  
-> **Last Updated:** January 21, 2026
-
----
-
-## 📋 Overview
-
-This document specifies all frontend components required for upcoming features. Each section includes:
-- Component name and purpose
-- Props/state requirements
-- API endpoints to integrate
-- UI/UX guidelines
-
----
-
-## 🔧 Phase 1: Quick Wins
-
-### 1.1 Contact/Feedback Form
-
-**Component:** `FeedbackForm.tsx`
-
-**Location:** `app/contact/page.tsx` (existing, needs update)
-
-**Props:**
-```typescript
-interface FeedbackFormProps {
-  userId?: string; // Pre-fill if logged in
-  email?: string;
-}
-```
-
-**API Integration:**
-```typescript
-POST /api/feedback
-Body: { email, name, subject, message, category }
-Response: { success: boolean, message: string }
-```
-
-**UI Requirements:**
-- Form fields: Name, Email, Subject (dropdown), Message
-- Categories: General, Bug Report, Feature Request, Other
-- Success toast on submit
-- Email confirmation display
-
----
-
-### 1.2 Streak Badge
-
-**Component:** `StreakBadge.tsx`
-
-**Location:** `app/components/` (new component)
-
-**Props:**
-```typescript
-interface StreakBadgeProps {
-  currentStreak: number;
-  bestStreak: number;
-  isOnFire?: boolean; // streak >= 3
-}
-```
-
-**API Integration:**
-```typescript
-GET /api/users/{id}/streak
-Response: { current_streak, best_streak, multiplier }
-```
-
-**UI Requirements:**
-- Fire emoji animation when streak >= 3
-- Display current streak number
-- Tooltip showing best streak and multiplier
-- Use existing gold accent color for "on fire" state
-
----
-
-### 1.3 Prediction Templates
-
-**Component:** `TemplateSelector.tsx`
-
-**Location:** Inside `PredictionForm.tsx`
-
-**Props:**
-```typescript
-interface TemplateSelectorProps {
-  onApply: (positions: DriverPositions) => void;
-}
-
-type TemplateType = 'standings' | 'last-race' | 'random' | 'custom';
-```
-
-**API Integration:**
-```typescript
-GET /api/templates                    // List all
-GET /api/templates/standings          // Current WDC order
-GET /api/templates/last-race          // User's last prediction
-POST /api/templates                   // Save custom
-```
-
-**UI Requirements:**
-- Dropdown with template options
-- "Apply" button that fills form
-- "Save as Template" option for custom picks
-- Clear visual distinction between global and personal templates
-
----
-
-## 📊 Phase 2: Analytics
-
-### 2.1 Analytics Dashboard
-
-**Component:** `AnalyticsDashboard.tsx`
-
-**Location:** `app/profile/[id]/analytics/page.tsx` (new route)
-
-**Sub-components:**
-| Component | Purpose |
-|:----------|:--------|
-| `AccuracyHeatmap.tsx` | Driver vs. accuracy grid |
-| `TrendChart.tsx` | Performance over season |
-| `InsightCard.tsx` | "You overrate X by Y positions" |
-| `ComparisonWidget.tsx` | Compare vs. another user |
-
-**API Integration:**
-```typescript
-GET /api/analytics/me
-Response: {
-  total_predictions: number,
-  accuracy_percentage: number,
-  accuracy_by_driver: Record<string, number>,
-  accuracy_by_circuit: Record<string, number>,
-  overrated_drivers: string[],
-  underrated_drivers: string[],
-  trend_data: { race: string, accuracy: number }[]
-}
-```
-
-**UI Requirements:**
-- Use existing telemetry panel styling
-- Heatmap uses team colors for drivers
-- Trend chart uses recharts or similar
-- Mobile-responsive grid layout
-
----
-
-### 2.2 Circuit Guide Cards
-
-**Component:** `CircuitGuide.tsx`
-
-**Location:** `app/calendar/page.tsx` (add to race cards)
-
-**Props:**
-```typescript
-interface CircuitGuideProps {
-  circuitId: number;
-  showExpanded?: boolean;
-}
-```
-
-**API Integration:**
-```typescript
-GET /api/circuits/{id}
-Response: {
-  name: string,
-  country: string,
-  drs_zones: number,
-  overtaking_difficulty: 'easy' | 'medium' | 'hard',
-  lap_record: string,
-  historical_winners: { driver: string, year: number }[],
-  weather_patterns: { condition: string, probability: number }[]
-}
-```
-
-**UI Requirements:**
-- Collapsible panel on race cards
-- DRS zone count with icon
-- Overtaking difficulty badge (color-coded)
-- Weather probability bars
-- "Verstappen dominates here" type insights
-
----
-
-## 📱 Phase 3: Engagement
-
-### 3.1 Push Notification Preferences
-
-**Component:** `NotificationPreferences.tsx`
-
-**Location:** `app/profile/settings/page.tsx` (new route)
-
-**Props:**
-```typescript
-interface NotificationPreferencesProps {
-  preferences: {
-    race_reminders: boolean;
-    friend_requests: boolean;
-    rivalry_updates: boolean;
-    results_announcements: boolean;
-    weekly_digest: boolean;
-  };
-  onUpdate: (prefs: Preferences) => void;
-}
-```
-
-**API Integration:**
-```typescript
-GET /api/notifications/preferences
-PATCH /api/notifications/preferences
-POST /api/notifications/subscribe   // Send push subscription
-```
-
-**UI Requirements:**
-- Toggle switches for each preference
-- "Enable Push Notifications" CTA if not subscribed
-- Browser permission request flow
-- Service Worker registration
-
-**Service Worker:** Create `public/sw.js` for push handling
-
----
-
-### 3.2 Shareable Prediction Card
-
-**Component:** `ShareButton.tsx`
-
-**Location:** Add to prediction display components
-
-**Props:**
-```typescript
-interface ShareButtonProps {
-  predictionId: number;
-  platform?: 'twitter' | 'whatsapp' | 'copy';
-}
-```
-
-**API Integration:**
-```typescript
-GET /api/og/prediction/{id}  // Returns PNG image
-GET /api/share/{id}          // Share page with OG meta
-```
-
-**UI Requirements:**
-- Share icon button
-- Dropdown with platform options
-- Preview of generated card
-- Copy link functionality
-- Mobile share API integration
-
----
-
-### 3.3 Live Timing Tower
-
-**Component:** `LiveTimingTower.tsx`
-
-**Location:** `app/live/page.tsx` (new route)
-
-**Sub-components:**
-| Component | Purpose |
-|:----------|:--------|
-| `PositionRow.tsx` | Single driver row |
-| `GapDelta.tsx` | +/- time display |
-| `SessionHeader.tsx` | Session type, status |
-| `TireIndicator.tsx` | Current compound |
-
-**Props:**
-```typescript
-interface LiveTimingTowerProps {
-  sessionId: number;
-}
-
-interface PositionData {
-  driver: string;
-  position: number;
-  gap_to_leader: string;
-  last_lap_time: string;
-  tire_compound: 'soft' | 'medium' | 'hard' | 'inter' | 'wet';
-  pit_stops: number;
-}
-```
-
-**API Integration:**
-```typescript
-GET /api/live/current         // Current session info
-WS  /api/live/stream          // WebSocket for real-time
-```
-
-**UI Requirements:**
-- F1 TV-style timing tower layout
-- Green/yellow/purple sector colors
-- Automatic position animation on update
-- Connection status indicator
-- Fallback for when no live session
-
----
-
-## 🎮 Phase 4: Gamification
-
-### 4.1 Fantasy Team Builder
-
-**Component:** `FantasyTeamBuilder.tsx`
-
-**Location:** `app/fantasy/page.tsx` (new route)
-
-**Sub-components:**
-| Component | Purpose |
-|:----------|:--------|
-| `DriverMarket.tsx` | Available drivers with prices |
-| `TeamSlots.tsx` | 5 driver slots |
-| `BudgetDisplay.tsx` | Remaining budget |
-| `TransferWindow.tsx` | Make transfers |
-
-**API Integration:**
-```typescript
-GET /api/fantasy/drivers      // All drivers with prices
-GET /api/fantasy/team         // User's current team
-POST /api/fantasy/team        // Create team
-POST /api/fantasy/transfer    // Make transfer
-GET /api/fantasy/leaderboard  // Fantasy standings
-```
-
-**UI Requirements:**
-- Drag-and-drop driver selection
-- Budget constraint visualization
-- Transfer deadline countdown
-- Leaderboard with point breakdown
-- Driver card with cost and points earned
-
----
-
-## 🎨 Global UI Updates
-
-### Dark/Light Mode Toggle
-
-**Location:** `app/components/Navbar.tsx`
-
-**Implementation:**
-```typescript
-// Use existing CSS variables
-// Add toggle button
-// Persist to localStorage + preferences API
-```
-
-**Requirements:**
-- Sun/moon icon toggle
-- Smooth CSS transition
-- Respect system preference initially
-- Sync with backend preferences API
-
----
-
-## 📡 API Error Handling
-
-All components should handle these standard error responses:
-
-```typescript
-interface APIError {
-  detail: string;
-  status_code: number;
-}
-
-// Standard error codes
-400 - Validation error
-401 - Unauthorized
-403 - Forbidden
-404 - Not found
-429 - Rate limited
-500 - Server error
-```
-
-Use `TeamRadioToast` for error display.
-
----
-
-## 🧪 Testing Requirements
-
-Each component should have:
-- [ ] Unit tests for logic
-- [ ] Integration tests for API calls
-- [ ] Mobile responsiveness check
-- [ ] Accessibility (a11y) compliance
-- [ ] Loading state handling
-- [ ] Error state handling
-
----
-
-## 📁 New Files Summary
-
-```
-app/
-├── analytics/
-│   └── page.tsx              # Analytics dashboard
-├── contact/
-│   └── page.tsx              # (update existing)
-├── fantasy/
-│   └── page.tsx              # Fantasy team
-├── live/
-│   └── page.tsx              # Live timing
-├── profile/
-│   └── settings/
-│       └── page.tsx          # Notification settings
-├── components/
-│   ├── StreakBadge.tsx
-│   ├── TemplateSelector.tsx
-│   ├── AnalyticsDashboard.tsx
-│   ├── AccuracyHeatmap.tsx
-│   ├── TrendChart.tsx
-│   ├── CircuitGuide.tsx
-│   ├── NotificationPreferences.tsx
-│   ├── ShareButton.tsx
-│   ├── LiveTimingTower.tsx
-│   ├── PositionRow.tsx
-│   ├── GapDelta.tsx
-│   ├── FantasyTeamBuilder.tsx
-│   ├── DriverMarket.tsx
-│   └── BudgetDisplay.tsx
-└── public/
-    └── sw.js                  # Service worker
-```
-
----
-
-**Questions?** Refer to backend implementation plan or contact backend team.
+📂 MODULE 5.5: FULL-PAGE TEAM IMMERSION (Profile Redesign)
+Current Status: The profile feels "boxed in." Team identity (colors/numbers) is restricted to a small card on the left. Target State: "Atmospheric Immersion." The entire page must feel like the user is inside their specific Team Garage. The Team Identity must bleed across the entire screen, affecting backgrounds, charts, and data streams.
+
+1. 🎨 Global Styling Strategy (The "Team_OS" Theme)
+Objective: Instead of hardcoding colors in individual components, apply a dynamic CSS Variable wrapper to the root of the Profile Page.
+
+Action: Wrap the entire page content in a div that injects the selected team's color tokens.
+
+TypeScript
+// ProfilePage.tsx (Root Wrapper)
+const team = GRID_DATA[user.favoriteTeam]; // Get team config
+
+return (
+  <div 
+    className="min-h-screen relative w-full overflow-hidden bg-[#0F1115]"
+    style={{ 
+      // Define Global Variables
+      "--team-color": team.color,       // Main Brand Color (e.g., #FF1801)
+      "--team-dim": `${team.color}15`,  // Low Opacity (Backgrounds)
+      "--team-glow": `${team.color}60`  // Medium Opacity (Glows)
+    } as React.CSSProperties}
+  >
+    {/* Page Content Goes Here */}
+  </div>
+);
+2. 🏎️ The "Mega-Number" Background
+Critique: The driver number is currently trapped inside the left card. Fix: Move it to the Global Page Background. It must be massive and bleed off the screen.
+
+Implementation:
+Placement: Direct child of the Root Wrapper (behind all content).
+Position: Fixed, Bottom-Right corner.
+Size: text-[40rem] (approx 600px).
+Z-Index: 0 (Behind everything).
+Style:
+Font: Racing Sans One or Eurostile.
+Stroke: 2px solid line.
+Fill: transparent.
+Color: rgba(255, 255, 255, 0.03) (Subtle White/Grey). Do NOT use team color here (it distracts from data).
+TypeScript
+{/* Background Layer */}
+<div className="fixed -bottom-20 -right-20 select-none pointer-events-none z-0">
+  <span 
+    className="font-racing text-[40rem] leading-none text-transparent opacity-10"
+    style={{ WebkitTextStroke: '2px rgba(255,255,255,0.1)' }}
+  >
+    {driver.number} {/* e.g. "16" */}
+  </span>
+</div>
+3. 📊 "Team_OS" Telemetry (Right Column Updates)
+Critique: The charts and stats use generic Cyan/Green colors. Fix: All data visualizations must inherit var(--team-color).
+
+A. The Radar Chart (Performance Matrix)
+Update the charting library (Recharts/Chart.js) to use the CSS variable.
+Stroke: var(--team-color) (Solid Line).
+Fill: var(--team-color) with 30% Opacity.
+Dots: Solid var(--team-color).
+B. The Stats Strip (Top Row)
+Big Numbers: Change text color to text-[color:var(--team-color)].
+Labels: Keep them Grey (text-gray-500).
+C. The Borders & Containers
+Panel Borders: Change from border-gray-800 to border-[color:var(--team-dim)].
+Effect: This makes the glass panels look like they are tinted with the team's hue.
+4. 🛡️ Asset & Logo Polish
+Critique: The Avatar is currently a letter "S" or "Y". It must be the Logo.
+
+A. The Avatar (Left Column)
+Logic: Force render the team.logo SVG.
+Fallback: If SVG fails, render the Team Initials (e.g., "SF", "MCL") in the Team Font. Never use the User's Initial.
+Style: The ring around the avatar must be border-[color:var(--team-color)] and glow.
+B. The Page Watermark
+Action: Add a Second Team Logo as a huge watermark behind the Right Column content.
+Style: Greyscale, 5% Opacity, Centered behind the charts.
+Why: This creates texture on the right side of the screen to balance the left side.
+5. 📝 Implementation Checklist for Agent
+[ ] Refactor Root: Implement the style={{ "--team-color": ... }} wrapper in ProfilePage.tsx.
+[ ] Move Number: Delete the driver number from the Left Card. Create the "Mega-Number" background component.
+[ ] Update Telemetry: Change all hardcoded "Cyan/Green" values in ProfileTelemetry.tsx to use var(--team-color).
+[ ] Fix Avatar: Ensure team.logo is rendering. Remove the user's initial.
+[ ] Verify Mobile: Ensure the Mega-Number doesn't overlap text on small screens (set z-index: -1).

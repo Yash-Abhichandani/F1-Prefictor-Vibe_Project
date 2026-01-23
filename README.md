@@ -52,8 +52,11 @@ Your personalized dashboard displays live race countdowns, recent podium results
 ### ⏱️ **Precision Predictions**
 Lock in your **Qualifying Top 3**, **Race Top 10**, and **Fastest Lap** picks before sessions begin. Our scoring system rewards accuracy, risk-taking, and intuition with bonus points for exact matches.
 
-### 📡 **Real-Time Telemetry**
-We pull official classification data from the **Ergast/Jolpica API** the moment the checkered flag waves. No manual updates. No waiting. Just instant, automated scoring.
+### 📡 **Live Telemetry & Analytics**
+**New in v3.1:** Real-time race data powered by **OpenF1** (3.7Hz streams) and **FastF1** (Deep Learning).
+- **Live Timing Tower**: Real-time interval & gap tracking.
+- **Telemetry Graphs**: Live speed/throttle/brake traces.
+- **Driver Radar**: Comparative performance analysis (Cornering, Tyres, Pace).
 
 ### 🗓️ **Complete 2026 Calendar**
 All 24 races with full session times: FP1, FP2, FP3, Sprint Quali, Sprint, Qualifying, and Race—including the 11th team (Cadillac) and all 22 drivers.

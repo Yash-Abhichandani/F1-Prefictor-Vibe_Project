@@ -9,6 +9,19 @@ import GlassCard from "../components/ui/GlassCard";
 import Badge from "../components/ui/Badge";
 import F1Button from "../components/ui/F1Button";
 import AdUnit from "../components/AdUnit";
+import { TEAMS_2026, TEAM_COLORS } from "../lib/drivers";
+
+// Deterministic Team Color Assignment
+const getTeamColor = (username: string) => {
+  if (!username) return TEAM_COLORS["Red Bull"];
+  const teams = Object.keys(TEAM_COLORS);
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) {
+    hash = username.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % teams.length;
+  return TEAM_COLORS[teams[index]];
+};
 
 interface UserStanding {
   id: string;
@@ -17,7 +30,42 @@ interface UserStanding {
   is_admin: boolean;
   latest_points?: number;
   last_races?: { code: string; points: number }[];
+  rank_change?: number; // Simulator for now
 }
+
+// Simple Sparkline Component
+const Sparkline = ({ data }: { data: number[] }) => {
+  if (!data?.length) return <div className="w-12 h-6 bg-[var(--bg-onyx)]/50 rounded" />;
+  const width = 60;
+  const height = 24;
+  const max = 26; // max points + buffer
+  const step = width / (data.length - 1 || 1);
+  
+  const points = data.map((d, i) => `${i * step},${height - (d / max) * height}`).join(" ");
+
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <polyline 
+        points={points} 
+        fill="none" 
+        stroke="var(--accent-cyan)" 
+        strokeWidth="1.5" 
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="opacity-80"
+      />
+      {data.map((d, i) => (
+        <circle 
+          key={i} 
+          cx={i * step} 
+          cy={height - (d / max) * height} 
+          r="1.5" 
+          fill={d >= 25 ? "var(--telemetry-purple)" : d >= 15 ? "var(--status-success)" : "var(--accent-cyan)"} 
+        />
+      ))}
+    </svg>
+  );
+};
 
 export default function LeaderboardPage() {
   const [standings, setStandings] = useState<UserStanding[]>([]);
@@ -33,8 +81,13 @@ export default function LeaderboardPage() {
     const fetchData = async () => {
       try {
         const fetchUser = async () => {
-             const { data: { user } } = await supabase.auth.getUser();
-             return user?.id || null;
+             try {
+               const { data: { user }, error } = await supabase.auth.getUser();
+               if (error || !user) return null;
+               return user.id;
+             } catch {
+               return null;
+             }
         };
 
         const fetchStandings = async () => {
@@ -60,244 +113,179 @@ export default function LeaderboardPage() {
     fetchData();
   }, []);
 
-  const getPositionStyle = (position: number) => {
-    if (position === 1) return {
-      bg: 'bg-gradient-to-r from-yellow-500/20 to-yellow-600/10',
-      border: 'border-yellow-500/50',
-      text: 'text-yellow-400',
-      badge: 'bg-yellow-500 text-black'
-    };
-    if (position === 2) return {
-      bg: 'bg-gradient-to-r from-gray-400/20 to-gray-500/10',
-      border: 'border-gray-400/50',
-      text: 'text-gray-300',
-      badge: 'bg-gray-400 text-black'
-    };
-    if (position === 3) return {
-      bg: 'bg-gradient-to-r from-orange-600/20 to-orange-700/10',
-      border: 'border-orange-600/50',
-      text: 'text-orange-400',
-      badge: 'bg-orange-600 text-white'
-    };
-    return {
-      bg: 'bg-[var(--bg-onyx)]',
-      border: 'border-[var(--glass-border)]',
-      text: 'text-[var(--text-muted)]',
-      badge: 'bg-[var(--bg-graphite)] text-[var(--text-muted)]'
-    };
-  };
-
-  const top3 = standings.slice(0, 3);
-  const rest = standings.slice(3);
   const currentUserRank = standings.findIndex(s => s.id === currentUserId) + 1;
 
   return (
     <div className="min-h-screen bg-[var(--bg-void)] pt-24 pb-16">
-      {/* Racing stripe */}
-      <div className="fixed top-0 left-0 w-2 h-full bg-gradient-to-b from-[var(--accent-gold)] via-[var(--accent-gold)]/50 to-transparent" />
+      {/* Grid Pattern Background */}
+      <div className="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
       
-      <div className="max-w-5xl mx-auto px-6">
+      <div className="max-w-4xl mx-auto px-4 relative z-10">
         
-        {/* Header - Always Visible */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-gold-dim)] border border-[var(--accent-gold)]/30 mb-4">
-            <span className="w-2 h-2 rounded-full bg-[var(--accent-gold)] animate-pulse" />
-            <span className="text-xs font-bold text-[var(--accent-gold)] tracking-wider uppercase">Prediction Championship</span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight mb-4 font-orbitron">
-            LEADERBOARD
-          </h1>
-          <p className="text-[var(--text-muted)] max-w-lg mx-auto">
-            The best F1 predictors of the 2026 season. Climb the ranks by making accurate predictions.
-          </p>
-          
-          {/* Current user rank highlight */}
-          {!loading && currentUserRank > 0 && (
-            <div className="mt-6 inline-flex items-center gap-3 px-5 py-3 rounded-xl bg-[var(--accent-cyan-dim)] border border-[var(--accent-cyan)]/30">
-              <span className="text-[var(--accent-cyan)]">📍</span>
-              <span className="text-[var(--text-secondary)]">Your Position:</span>
-              <span className="text-2xl font-black text-[var(--accent-cyan)] font-mono">#{currentUserRank}</span>
+        {/* Header - Telemetry Style */}
+        <div className="flex items-end justify-between mb-8 border-b border-[var(--glass-border)] pb-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 bg-[var(--f1-red)] animate-pulse rounded-full" />
+              <span className="text-xs font-mono text-[var(--f1-red)] tracking-widest uppercase">Live Timing</span>
             </div>
-          )}
+            <h1 className="text-3xl md:text-5xl font-black text-white font-display tracking-tight uppercase italic">
+              Founders League
+            </h1>
+          </div>
+          <div className="text-right hidden md:block">
+             <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Season Status</div>
+             <div className="text-xl font-mono text-[var(--accent-cyan)]">RACE 01/24</div>
+          </div>
         </div>
 
-        {/* Content Area */}
+        {/* Loading State */}
         {loading ? (
              <div className="py-20">
-                <LoadingSpinner message="Updating Leaderboard..." />
+                <LoadingSpinner message="Fetching Telemetry..." />
              </div>
         ) : (
-          <>
-            {/* Podium - Top 3 */}
-            {top3.length >= 3 && (
-              <div className="flex flex-col md:flex-row justify-center items-end gap-4 mb-16 pt-8">
-                {/* P2 */}
-                <GlassCard interactive className="flex-1 p-6 text-center order-2 md:order-1 relative group !overflow-visible">
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-black font-bold border-4 border-[var(--bg-void)] shadow-[0_4px_12px_rgba(0,0,0,0.5)] z-20">
-                    2
-                  </div>
-                  <div className="mt-8 text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">Silver</div>
-                  <Link href={`/profile/${top3[1]?.id}`} className="block hover:underline hover:text-[var(--text-secondary)] transition-colors">
-                    <div className="text-2xl font-bold text-white mb-1 truncate">{top3[1]?.username?.split('@')[0] || 'Racer'}</div>
-                  </Link>
-                  <div className="text-3xl font-black text-gray-300 font-mono">{top3[1]?.total_score || 0}</div>
-                  <div className="text-xs text-[var(--text-muted)]">points</div>
-                  
-                  {/* Recent Form P2 */}
-                  <div className="mt-4 flex justify-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                    {top3[1]?.last_races?.map((race, i) => (
-                        <div key={i} className={`w-2 h-2 rounded-full ${race.points > 15 ? 'bg-[var(--status-success)]' : 'bg-gray-600'}`} />
-                    ))}
-                  </div>
-                </GlassCard>
+          <div className="flex flex-col gap-6">
+            
+            {/* Top 3 - "Podium Data" */}
+            {standings.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    {/* P2 */}
+                    {standings[1] && (
+                        <div className="order-2 md:order-1 bg-[var(--bg-card)] border border-[var(--glass-border)] p-4 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-2 opacity-50">
+                                <span className="text-4xl font-black text-[var(--text-muted)] opacity-20">02</span>
+                            </div>
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-8 h-8 rounded bg-gray-400 flex items-center justify-center font-bold text-black font-mono">2</div>
+                                <span className="text-sm text-gray-400 uppercase tracking-wider font-bold">Silver</span>
+                            </div>
+                            <div className="font-bold text-xl text-white truncate mb-1">{standings[1].username?.split('@')[0]}</div>
+                            <div className="font-mono text-2xl text-[var(--accent-cyan)]">{standings[1].total_score} <span className="text-xs text-[var(--text-muted)]">PTS</span></div>
+                        </div>
+                    )}
+                    
+                    {/* P1 */}
+                    {standings[0] && (
+                        <div className="order-1 md:order-2 bg-[var(--accent-gold-dim)] border border-[var(--accent-gold)] p-6 relative overflow-hidden transform md:-translate-y-2 shadow-[var(--shadow-glow-gold)] group">
+                            {/* Shimmer Effect */}
+                            <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent z-10 pointer-events-none" />
+                            
+                            <div className="absolute top-0 right-0 p-2">
+                                <span className="text-5xl font-black text-[var(--accent-gold)] opacity-20">01</span>
+                            </div>
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 rounded bg-[var(--accent-gold)] flex items-center justify-center font-bold text-black font-mono text-xl">1</div>
+                                <span className="text-sm text-[var(--accent-gold)] uppercase tracking-wider font-bold animate-pulse">Leader</span>
+                            </div>
+                            <div className="font-black text-2xl text-white truncate mb-1">{standings[0].username?.split('@')[0]}</div>
+                            <div className="font-mono text-4xl text-[var(--accent-gold)]">{standings[0].total_score} <span className="text-sm text-[var(--accent-gold)]/70">PTS</span></div>
+                        </div>
+                    )}
 
-                {/* P1 */}
-                <GlassCard variant="gold" className="flex-[1.2] p-8 text-center order-1 md:order-2 relative scale-105 group !overflow-visible z-10">
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-3xl border-4 border-[var(--bg-void)] shadow-[var(--shadow-glow-gold)] z-20">
-                    🏆
-                  </div>
-                  <div className="mt-10 text-xs text-[var(--accent-gold)] uppercase tracking-[0.2em] mb-2 animate-pulse">Champion</div>
-                  <Link href={`/profile/${top3[0]?.id}`} className="block hover:underline hover:text-[var(--accent-gold)] transition-colors">
-                    <div className="text-4xl font-bold text-white mb-1 truncate">{top3[0]?.username?.split('@')[0] || 'Champion'}</div>
-                  </Link>
-                  <div className="text-6xl font-black text-[var(--accent-gold)] font-mono text-glow-gold">{top3[0]?.total_score || 0}</div>
-                  <div className="text-xs text-[var(--text-muted)]">points</div>
-                  
-                  {/* Recent Form P1 */}
-                  <div className="mt-6 flex justify-center gap-2">
-                    {top3[0]?.last_races?.slice(0, 3).map((race, i) => (
-                        <span key={i} className="text-xs font-mono bg-[var(--accent-gold-dim)] text-[var(--accent-gold)] px-2 py-1 rounded border border-[var(--accent-gold)]/20">
-                            {race.code}
-                        </span>
-                    ))}
-                  </div>
-                </GlassCard>
-
-                {/* P3 */}
-                <GlassCard interactive className="flex-1 p-6 text-center order-3 relative group !overflow-visible">
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-gradient-to-br from-orange-600 to-orange-700 flex items-center justify-center text-white font-bold border-4 border-[var(--bg-void)] shadow-[0_4px_12px_rgba(0,0,0,0.5)] z-20">
-                    3
-                  </div>
-                  <div className="mt-8 text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">Bronze</div>
-                  <Link href={`/profile/${top3[2]?.id}`} className="block hover:underline hover:text-[var(--text-secondary)] transition-colors">
-                    <div className="text-2xl font-bold text-white mb-1 truncate">{top3[2]?.username?.split('@')[0] || 'Racer'}</div>
-                  </Link>
-                  <div className="text-3xl font-black text-orange-400 font-mono">{top3[2]?.total_score || 0}</div>
-                  <div className="text-xs text-[var(--text-muted)]">points</div>
-                  {/* Recent Form P3 */}
-                  <div className="mt-4 flex justify-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                    {top3[2]?.last_races?.map((race, i) => (
-                        <div key={i} className={`w-2 h-2 rounded-full ${race.points > 15 ? 'bg-[var(--status-success)]' : 'bg-gray-600'}`} />
-                    ))}
-                  </div>
-                </GlassCard>
-              </div>
+                    {/* P3 */}
+                    {standings[2] && (
+                        <div className="order-3 bg-[var(--bg-card)] border border-[var(--glass-border)] p-4 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-2 opacity-50">
+                                <span className="text-4xl font-black text-[var(--text-muted)] opacity-20">03</span>
+                            </div>
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-8 h-8 rounded bg-orange-700 flex items-center justify-center font-bold text-white font-mono">3</div>
+                                <span className="text-sm text-orange-700 uppercase tracking-wider font-bold">Bronze</span>
+                            </div>
+                            <div className="font-bold text-xl text-white truncate mb-1">{standings[2].username?.split('@')[0]}</div>
+                            <div className="font-mono text-2xl text-[var(--accent-cyan)]">{standings[2].total_score} <span className="text-xs text-[var(--text-muted)]">PTS</span></div>
+                        </div>
+                    )}
+                </div>
             )}
 
-            {/* === AD PLACEMENT === */}
-            <div className="my-8">
-              <AdUnit 
-                slot="leaderboard_mid"
-                format="horizontal"
-                style={{ minHeight: "90px" }}
-                label="Sponsored"
-              />
-            </div>
+            {/* TIMING TOWER LIST */}
+            <div className="bg-[var(--bg-midnight)] border border-[var(--glass-border)] rounded-sm overflow-hidden">
+                {/* Table Header */}
+                <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-[var(--bg-carbon)] border-b border-[var(--glass-border)] text-[9px] md:text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest">
+                    <div className="col-span-1 text-center">Pos</div>
+                    <div className="col-span-1 text-center hidden md:block">Var</div>
+                    <div className="col-span-5 md:col-span-4">Driver</div>
+                    <div className="col-span-3 md:col-span-4 text-center">Telemetry</div>
+                    <div className="col-span-3 md:col-span-2 text-right">Points</div>
+                </div>
 
-            {/* Rest of standings */}
-            <GlassCard className="overflow-hidden">
-             <div className="overflow-x-auto">
-              <div className="p-6 border-b border-[var(--glass-border)] bg-[var(--bg-carbon)] flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-[var(--accent-gold)] text-xl">📊</span>
-                  <span className="font-bold text-lg text-white">Full Standings</span>
-                </div>
-                <div className="hidden md:flex text-sm text-[var(--text-muted)] gap-8 pr-6 uppercase tracking-wider font-bold">
-                    <span className="w-[100px] text-center">Recent Form</span>
-                    <span className="w-24 text-right">Points</span>
-                </div>
-              </div>
-              
-              {standings.length === 0 ? (
-                <div className="p-16 text-center text-[var(--text-muted)]">
-                  <span className="text-5xl mb-6 block opacity-40">🏁</span>
-                  <p className="text-lg">No predictions yet. Be the first to compete!</p>
-                  <Link href="/calendar" className="mt-6 inline-block text-[var(--accent-cyan)] hover:underline text-lg">
-                    View upcoming races →
-                  </Link>
-                </div>
-              ) : (
-                  <table className="w-full min-w-[500px] md:min-w-0">
-                    <thead>
-                      <tr className="bg-[var(--bg-carbon)] text-[var(--text-muted)] text-xs uppercase tracking-wider">
-                        <th className="p-3 md:p-5 text-center border-b border-[var(--glass-border)]">Pos</th>
-                        <th className="p-3 md:p-5 text-left border-b border-[var(--glass-border)]">Racer</th>
-                        <th className="p-3 md:p-5 text-center border-b border-[var(--glass-border)] hidden md:table-cell">Wins</th>
-                        <th className="p-3 md:p-5 text-right border-b border-[var(--glass-border)]">Points</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rest.map((user, index) => {
+                {/* Rows */}
+                <div className="divide-y divide-[var(--glass-border)]">
+                    {standings.map((user, index) => {
                         const position = index + 1;
-                        const style = getPositionStyle(position);
                         const isCurrentUser = user.id === currentUserId;
+                        const pointsData = user.last_races?.map(r => r.points) || [0, 0, 0, 0, 0];
+                        
+                        const teamColor = getTeamColor(user.username || 'User');
                         
                         return (
-                          <tr 
-                            key={user.id}
-                            className={`border-b border-[var(--glass-border)] hover:bg-[var(--bg-graphite)] transition-colors group ${
-                              isCurrentUser ? 'bg-[var(--accent-cyan-dim)] border-l-4 border-l-[var(--accent-cyan)]' : 'border-l-4 border-l-transparent'
-                            }`}
-                          >
-                            <td className="p-3 md:p-5 text-center">
-                              <div className={`w-8 h-8 md:w-12 md:h-12 mx-auto flex items-center justify-center rounded-xl font-bold font-mono text-sm md:text-lg shrink-0 ${style.badge}`}>
-                                {position <= 3 ? (position === 1 ? '🥇' : position === 2 ? '🥈' : '🥉') : position}
-                              </div>
-                            </td>
-                            
-                            <td className="p-3 md:p-5">
-                              <div className="flex items-center gap-3">
-                                <Link href={`/profile/${user.id}`} className="block hover:underline min-w-0">
-                                  <div className={`font-bold text-base md:text-lg truncate max-w-[120px] md:max-w-[200px] ${isCurrentUser ? 'text-[var(--accent-cyan)]' : 'text-white'}`}>
-                                      {user.username?.split('@')[0] || 'Anonymous'}
-                                      {isCurrentUser && <span className="ml-2 text-xs md:text-sm text-[var(--accent-cyan)] font-normal hidden md:inline">(You)</span>}
-                                  </div>
-                                </Link>
-                                {user.is_admin && (
-                                  <Badge variant="gold" size="sm" icon="⭐" className="hidden md:inline-flex">
-                                    PRINCIPAL
-                                  </Badge>
-                                )}
-                              </div>
-                            </td>
+                            <Link 
+                                href={`/profile/${user.id}`}
+                                key={user.id}
+                                className={`grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-[var(--bg-onyx)] transition-all duration-200 group relative overflow-hidden ${
+                                    isCurrentUser ? 'bg-[var(--accent-cyan-dim)]' : ''
+                                }`}
+                            >
+                                {/* Team Color Stripe */}
+                                <div className="absolute left-0 top-0 bottom-0 w-1 opacity-70" style={{ backgroundColor: teamColor }} />
+                                {/* Position */}
+                                <div className="col-span-1 flex justify-center">
+                                    <span className={`font-mono font-bold text-lg ${position <= 3 ? 'text-[var(--accent-gold)]' : 'text-[var(--text-secondary)]'}`}>
+                                        {position}
+                                    </span>
+                                </div>
 
-                            <td className="p-3 md:p-5 text-center font-mono text-[var(--text-muted)] group-hover:text-white hidden md:table-cell">
-                                -
-                            </td>
-                            
-                            <td className="p-3 md:p-5 text-right">
-                              <span className={`font-mono text-xl md:text-2xl font-bold ${position <= 3 ? style.text : 'text-white'} group-hover:text-[var(--accent-cyan)]`}>
-                                {user.total_score}
-                              </span>
-                              <div className="text-[10px] text-[var(--text-subtle)] uppercase tracking-wider md:hidden">PTS</div>
-                            </td>
-                          </tr>
+                                {/* Variation - Now dynamic */}
+                                <div className="col-span-1 hidden md:flex justify-center items-center">
+                                    {user.rank_change !== undefined && user.rank_change !== 0 ? (
+                                      <span className={`text-[10px] ${user.rank_change > 0 ? 'text-[var(--status-success)]' : 'text-[var(--f1-red)]'}`}>
+                                        {user.rank_change > 0 ? '▲' : '▼'}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] text-[var(--text-muted)]">–</span>
+                                    )}
+                                </div>
+
+                                {/* Driver Name & Tag */}
+                                <div className="col-span-5 md:col-span-4 flex items-center gap-3 overflow-hidden">
+                                    <div className="truncate font-bold text-sm md:text-base text-white group-hover:text-[var(--accent-cyan)] transition-colors">
+                                        {user.username?.split('@')[0] || 'Unknown'}
+                                        {isCurrentUser && <span className="ml-2 text-[9px] bg-[var(--accent-cyan)] text-black px-1 rounded font-bold uppercase">ME</span>}
+                                    </div>
+                                    {user.is_admin && <span className="text-[10px] text-[var(--accent-gold)] border border-[var(--accent-gold)] px-1 rounded hidden lg:inline">TM</span>}
+                                </div>
+
+                                {/* Telemetry Sparkline */}
+                                <div className="col-span-3 md:col-span-4 flex justify-center items-center opacity-60 group-hover:opacity-100 transition-opacity">
+                                    <Sparkline data={pointsData} />
+                                </div>
+
+                                {/* Total Points */}
+                                <div className="col-span-3 md:col-span-2 text-right">
+                                    <div className="font-mono font-bold text-lg text-white">
+                                        {user.total_score}
+                                    </div>
+                                    <div className="text-[9px] text-[var(--telemetry-purple)] font-mono hidden sm:block">
+                                        GAP: {index === 0 ? '-' : `-${(standings[0]?.total_score || 0) - user.total_score}`}
+                                    </div>
+                                </div>
+                            </Link>
                         );
-                      })}
-                    </tbody>
-                  </table>
-              )}
-             </div>
-            </GlassCard>
-
-            {/* CTA */}
-            <div className="mt-12 text-center">
-              <p className="text-[var(--text-muted)] mb-4">Want to climb the ranks?</p>
-              <F1Button href="/calendar" variant="primary" className="px-8 py-4" icon="🏎️">
-                Make Predictions
-              </F1Button>
+                    })}
+                </div>
             </div>
-          </>
+
+            {/* Pagination / CTA */}
+            <div className="text-center pt-8 border-t border-[var(--glass-border)] mt-4">
+                <p className="text-[var(--text-muted)] text-sm mb-4 font-mono">DATA STREAM LIVE</p>
+                <F1Button href="/calendar" variant="secondary" className="text-xs uppercase tracking-widest">
+                    Submit New Prediction
+                </F1Button>
+            </div>
+
+          </div>
         )}
       </div>
     </div>

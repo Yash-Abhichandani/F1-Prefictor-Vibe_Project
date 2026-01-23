@@ -2,11 +2,14 @@
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter, useParams } from "next/navigation";
-import GlassCard from "../../components/ui/GlassCard";
-import Badge from "../../components/ui/Badge";
 import LoadingSpinner from "../../components/LoadingSpinner";
-import { DRIVERS_2026, getDriverTeam, TEAM_COLORS, getDriverNumber, getDriverName, TEAMS_2026, DRIVERS_DATA_2026 } from "../../lib/drivers";
-import F1Button from "../../components/ui/F1Button";
+import { TEAM_COLORS, DRIVERS_DATA_2026 } from "../../lib/drivers";
+import { GRID_DATA } from "../../lib/gridData";
+import DriverRadarChart from "../../components/DriverRadarChart";
+
+// New Components
+import ProfileIdentityCard from "../components/ProfileIdentityCard";
+import ProfileTelemetry from "../components/ProfileTelemetry";
 
 import { Profile, UserAchievement, Prediction, LeagueMember, FriendRequest } from "../../lib/types";
 
@@ -176,332 +179,134 @@ export default function UserProfilePage() {
     }
   };
 
-  if (loadingProfile) return <LoadingSpinner variant="f1" message="Loading Profile..." />;
-  if (!profile) return <div className="text-white text-center pt-32 text-xl font-bold">Profile not found.</div>;
+  if (loadingProfile) return <LoadingSpinner variant="f1" message="Loading Dossier..." />;
+  if (!profile) return <div className="text-white text-center pt-32 text-xl font-bold font-mono">ERROR: DOSSIER NOT FOUND</div>;
 
   const isOwner = currentUser?.id === targetUserId;
 
   // Display Logic
   const displayTeam = isEditing ? editTeam : profile.favorite_team;
-  const displayDriver = isEditing ? editDriver : profile.favorite_driver;
-  const teamColor = displayTeam ? TEAM_COLORS[displayTeam] : 'var(--accent-gold)';
-  const driverNumber = displayDriver ? getDriverNumber(displayDriver) : null;
-  const driverName = displayDriver ? getDriverName(displayDriver) : null;
+  const userTeamKey = displayTeam?.toLowerCase().replace(/\s+/g, "") || "ferrari";
+  
+  // Resolve Team Config using the shared logic (similar to IdentityCard, but central)
+  let teamConfig = GRID_DATA[userTeamKey];
+  if (!teamConfig) {
+       const foundKey = Object.keys(GRID_DATA).find(k => GRID_DATA[k].name.toLowerCase().includes(userTeamKey) || userTeamKey.includes(k));
+       if (foundKey) teamConfig = GRID_DATA[foundKey];
+  }
+  if (!teamConfig) teamConfig = GRID_DATA["ferrari"];
+
+  // Driver Number Logic
+  let driverNumber = "00";
+  if (profile.favorite_driver) {
+      const dKey = Object.keys(teamConfig.drivers).find(k => teamConfig.drivers[k].name === profile.favorite_driver);
+      if (dKey) driverNumber = teamConfig.drivers[dKey].number;
+      else driverNumber = Object.values(teamConfig.drivers)[0]?.number || "01";
+  } else {
+      driverNumber = Object.values(teamConfig.drivers)[0]?.number || "01";
+  }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-void)] pt-24 pb-16">
-        <div className="max-w-7xl mx-auto px-6">
+    <div 
+        className="min-h-screen relative w-full overflow-hidden bg-[#0F1115] transition-colors duration-700"
+        style={{
+            // @ts-ignore
+            "--team-color": teamConfig.color,
+            "--team-dim": `${teamConfig.color}15`, // 8% opacity
+            "--team-glow": `${teamConfig.color}60` // 37% opacity
+        }}
+    >
+        {/* === MEGA-NUMBER (FIXED LAYER) - Enhanced with Team Glow === */}
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+             {/* Team-colored ambient glow */}
+             <div 
+                 className="absolute -bottom-40 -right-40 w-[800px] h-[800px] rounded-full blur-[150px] opacity-20"
+                 style={{ backgroundColor: teamConfig.color }}
+             />
+             {/* The massive driver number */}
+             <span 
+                className="absolute -bottom-20 -right-10 font-black italic leading-none select-none"
+                style={{
+                    fontSize: "clamp(20rem, 50vw, 50rem)",
+                    color: "transparent",
+                    WebkitTextStroke: `3px ${teamConfig.color}25`,
+                    textShadow: `0 0 100px ${teamConfig.color}15`,
+                    fontFamily: "var(--font-orbitron), sans-serif"
+                }}
+             >
+                 {driverNumber}
+             </span>
+        </div>
+
+        <div className="relative z-10 pt-24 pb-16 max-w-7xl mx-auto px-6 h-screen flex flex-col">
             
-            {/* Header Section */}
-            <div className="mb-12 flex flex-col md:flex-row items-center gap-8 relative animate-fade-in">
-                {/* Back / Cancel Edit */}
-                {isEditing && (
-                    <button 
-                        onClick={() => setIsEditing(false)}
-                        className="absolute top-0 right-0 text-xs text-[var(--text-subtle)] hover:text-white"
-                    >
-                        Cancel
-                    </button>
-                )}
-
-                <div className="relative group">
-                    <div 
-                        className="w-32 h-32 rounded-full p-1 shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-all duration-500"
-                        style={{ 
-                            background: `linear-gradient(135deg, ${teamColor}, transparent)`,
-                            boxShadow: `0 0 30px ${teamColor}40`
-                        }}
-                    >
-                        <div className="w-full h-full rounded-full bg-[#0a0a0c] flex items-center justify-center text-5xl font-bold text-white relative overflow-hidden">
-                            {profile.username?.charAt(0).toUpperCase() || "R"}
-                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-white/10" />
-                        </div>
-                    </div>
-                     
-                     {driverNumber && (
-                        <div 
-                            className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg border-2 border-[var(--bg-void)] shadow-lg z-10"
-                            style={{ backgroundColor: teamColor, color: '#fff' }}
-                            title={`Fan of ${driverName}`}
-                        >
-                            {driverNumber}
-                        </div>
-                     )}
-                </div>
+            {/* === UNIFIED DASHBOARD CONTAINER === */}
+            <div className="flex-grow flex flex-col lg:flex-row border rounded-xl overflow-hidden shadow-2xl backdrop-blur-sm"
+                 style={{ 
+                     borderColor: "var(--team-dim)",
+                     backgroundColor: "rgba(15, 17, 21, 0.85)"
+                 }}
+            >
                 
-                <div className="text-center md:text-left flex-1">
-                    <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
-                        <h1 className="text-4xl font-black text-white tracking-tight">{profile.username || "Racer"}</h1>
-                        {displayTeam && !isEditing && (
-                            <Badge variant="outline" className="text-xs" style={{ borderColor: teamColor, color: teamColor }}>
-                                {displayTeam.toUpperCase()} FAN
-                            </Badge>
-                        )}
-                        {profile.is_admin && <Badge variant="gold" size="sm" icon="🛡️">ADMIN</Badge>}
-                    </div>
-                    
+                {/* === LEFT PANEL: IDENTITY (35%) === */}
+                <div className="lg:w-[35%] flex flex-col border-b lg:border-b-0 lg:border-r"
+                     style={{ borderColor: "var(--team-dim)" }}
+                >
                     {!isEditing ? (
-                        <>
-                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-[var(--text-muted)] font-mono text-sm">
-                                <span>Joined {profile.created_at ? new Date(profile.created_at).getFullYear() : 2026}</span>
-                                {!isOwner && <span>•</span>}
-                                {/* Add Friend Button logic could go here */}
-                            </div>
-                            
-                            {isOwner && (
-                                <div className="mt-4 flex flex-wrap gap-3 justify-center md:justify-start animate-fade-in-up">
-                                    <button 
-                                        onClick={() => setIsEditing(true)}
-                                        className="btn-ghost text-xs px-4 py-2 border border-[var(--glass-border)] hover:border-[var(--accent-cyan)] hover:text-[var(--accent-cyan)] rounded-full transition-all flex items-center gap-2"
-                                    >
-                                        ✏️ Edit Profile
-                                    </button>
-                                    <button 
-                                        onClick={() => router.push('/profile/settings')}
-                                        className="btn-ghost text-xs px-4 py-2 border border-[var(--glass-border)] hover:border-[var(--text-grey)] hover:text-white rounded-full transition-all flex items-center gap-2"
-                                    >
-                                        ⚙️ Settings
-                                    </button>
-                                </div>
-                            )}
-                            
-                            <div className="mt-4 flex justify-center md:justify-start">
-                                 <button 
-                                    onClick={() => router.push(`/profile/${targetUserId}/analytics`)}
-                                    className="text-xs font-bold text-[var(--accent-gold)] hover:text-white uppercase tracking-wider flex items-center gap-1 transition-colors group/analytics"
-                                 >
-                                    📊 View Telemetry Analytics <span className="group-hover/analytics:translate-x-1 transition-transform">→</span>
-                                 </button>
-                            </div>
-                        </>
+                        <div className="h-full p-6">
+                           <ProfileIdentityCard 
+                              profile={profile} 
+                              isOwner={isOwner} 
+                              onEdit={() => setIsEditing(true)} 
+                              onSettings={() => router.push('/profile/settings')}
+                           />
+                        </div>
                     ) : (
-                        <div className="mt-4 bg-[var(--bg-surface)] p-6 rounded-xl border border-[var(--accent-gold)]/30 animate-fade-in-up max-w-md">
-                            <h3 className="text-sm font-bold text-[var(--accent-gold)] mb-4 uppercase tracking-wider">Edit Profile</h3>
-                            
-                            {message && (
-                                <div className={`mb-4 p-2 rounded text-xs ${message.type === 'success' ? 'text-[var(--status-success)] bg-[var(--status-success)]/10' : 'text-[var(--f1-red)] bg-[var(--f1-red)]/10'}`}>
-                                    {message.text}
+                        <div className="h-full p-6 flex flex-col justify-center">
+                            {/* === EDITOR === */}
+                            <div className="bg-[var(--bg-onyx)] p-6 border rounded-xl flex flex-col gap-4 shadow-xl" style={{ borderColor: "var(--team-color)" }}>
+                                <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+                                    <h3 className="text-sm font-bold font-mono uppercase" style={{ color: "var(--team-color)" }}>// UPDATE_REGISTRY</h3>
+                                    <button onClick={() => setIsEditing(false)} className="text-gray-500 hover:text-white">✕</button>
                                 </div>
-                            )}
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-xs text-[var(--text-subtle)] mb-1">Username</label>
-                                    <input
-                                        type="text"
-                                        value={editUsername}
-                                        onChange={(e) => setEditUsername(e.target.value)}
-                                        className="w-full bg-[var(--bg-onyx)] border border-[var(--glass-border)] rounded-lg p-2 text-white text-sm focus:border-[var(--accent-gold)] outline-none"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-4">
                                     <div>
-                                        <label className="block text-xs text-[var(--text-subtle)] mb-1">Favorite Team</label>
-                                        <select
-                                            value={editTeam}
-                                            onChange={(e) => setEditTeam(e.target.value)}
-                                            className="w-full bg-[var(--bg-onyx)] border border-[var(--glass-border)] rounded-lg p-2 text-white text-sm appearance-none"
-                                        >
-                                            <option value="">Select...</option>
-                                            {Object.keys(TEAM_COLORS).map(t => (
-                                                <option key={t} value={t}>{t}</option>
-                                            ))}
+                                        <label className="text-[10px] text-gray-500 font-mono uppercase block mb-1">CALLSIGN</label>
+                                        <input value={editUsername} onChange={e => setEditUsername(e.target.value)} className="font-mono text-xs w-full bg-black/30 border border-white/10 p-3 text-white focus:border-[var(--team-color)] outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] text-gray-500 font-mono uppercase block mb-1">TEAM_ALLEGIANCE</label>
+                                        <select value={editTeam} onChange={e => setEditTeam(e.target.value)} className="font-mono text-xs w-full bg-black/30 border border-white/10 p-3 text-white focus:border-[var(--team-color)] outline-none appearance-none">
+                                            {Object.keys(TEAM_COLORS).map(t => <option key={t} value={t}>{t}</option>)}
                                         </select>
                                     </div>
-                                    
                                     <div>
-                                        <label className="block text-xs text-[var(--text-subtle)] mb-1">Favorite Driver</label>
-                                        <select
-                                            value={editDriver}
-                                            onChange={(e) => setEditDriver(e.target.value)}
-
-                                            className="w-full bg-[var(--bg-onyx)] border border-[var(--glass-border)] rounded-lg p-2 text-white text-sm disabled:opacity-50 appearance-none"
-                                        >
-                                            <option value="">Select...</option>
-                                            {DRIVERS_DATA_2026.map(d => (
-                                                <option key={d.name} value={d.name}>{d.name} #{d.number}</option>
-                                            ))}
+                                        <label className="text-[10px] text-gray-500 font-mono uppercase block mb-1">DRIVER_ID</label>
+                                        <select value={editDriver} onChange={e => setEditDriver(e.target.value)} className="font-mono text-xs w-full bg-black/30 border border-white/10 p-3 text-white focus:border-[var(--team-color)] outline-none appearance-none">
+                                            {DRIVERS_DATA_2026.map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
                                         </select>
                                     </div>
+                                    <div className="pt-4 border-t border-white/10 mt-auto">
+                                        <button onClick={handleSaveProfile} className="w-full text-black font-bold font-mono text-xs py-3 uppercase hover:brightness-110 shadow-lg tracking-wider" style={{ backgroundColor: "var(--team-color)" }}>
+                                            {saving ? "UPLOADING..." : "COMMIT_CHANGES"}
+                                        </button>
+                                    </div>
                                 </div>
-
-                                <div className="pt-2 border-t border-white/5">
-                                    <label className="block text-xs text-[var(--text-subtle)] mb-1">New Password (Optional)</label>
-                                    <input
-                                        type="password"
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        className="w-full bg-[var(--bg-onyx)] border border-[var(--glass-border)] rounded-lg p-2 text-white text-sm focus:border-[var(--accent-gold)] outline-none"
-                                    />
-                                </div>
-
-                                <F1Button onClick={handleSaveProfile} disabled={saving} className="w-full mt-2">
-                                    {saving ? "Saving..." : "Save Profile"}
-                                </F1Button>
-                                
-                                {/* Logout Button */}
-                                <button 
-                                    onClick={async () => {
-                                        await supabase.auth.signOut();
-                                        router.push('/login');
-                                        router.refresh();
-                                    }}
-                                    className="w-full mt-3 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--f1-red)] border border-[var(--glass-border)] hover:border-[var(--f1-red)]/50 rounded-lg transition uppercase tracking-wider font-bold"
-                                >
-                                    Log Out
-                                </button>
                             </div>
                         </div>
                     )}
                 </div>
-            </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-                <GlassCard className="p-4 md:p-6 text-center">
-                    <div className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-2">Total Score</div>
-                    <div className="text-4xl font-bold text-[var(--accent-gold)] font-mono text-glow-gold">{profile.total_score}</div>
-                </GlassCard>
-                <GlassCard className="p-4 md:p-6 text-center">
-                    <div className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-2">Current Streak</div>
-                    <div className="text-4xl font-bold text-[var(--f1-red)] font-mono flex items-center justify-center gap-2">
-                        {profile.current_streak || 0} <span className="text-xl">🔥</span>
-                    </div>
-                </GlassCard>
-                <GlassCard className="p-4 md:p-6 text-center">
-                    <div className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-2">Achievements</div>
-                    <div className="text-4xl font-bold text-[var(--accent-cyan)] font-mono">{achievements.length}</div>
-                </GlassCard>
-                <GlassCard className="p-4 md:p-6 text-center">
-                    <div className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-2">Predictions</div>
-                    <div className="text-4xl font-bold text-white font-mono">{predictions.length}</div>
-                </GlassCard>
-            </div>
-             
-             {loadingSecondary ? (
-                 <div className="py-12">
-                     <LoadingSpinner message="Loading Stats..." />
-                 </div>
-             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in-up">
-                    {/* LEFT COL: Trophies & Garages */}
-                    <div className="lg:col-span-2 space-y-8">
-                        {/* Trophy Case */}
-                        <div>
-                            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3"><span>🏆</span> TROPHY CASE</h2>
-                             {achievements.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {achievements.map((ua) => (
-                                        <GlassCard key={ua.achievement_id} className="p-4 flex items-center gap-4 hover:border-[var(--accent-gold)] transition-colors">
-                                            <div className="w-16 h-16 rounded-xl bg-[var(--bg-onyx)] flex items-center justify-center text-3xl shadow-inner border border-white/5">
-                                                {ua.achievements.icon}
-                                            </div>
-                                            <div>
-                                                <div className="font-bold text-white text-lg">{ua.achievements.name}</div>
-                                                <div className="text-xs text-[var(--text-muted)] mb-1">{ua.achievements.description}</div>
-                                                <div className="text-[10px] text-[var(--accent-gold)] font-mono uppercase">
-                                                    Unlocked {new Date(ua.unlocked_at).toLocaleDateString()}
-                                                </div>
-                                            </div>
-                                        </GlassCard>
-                                    ))}
-                                </div>
-                            ) : (
-                                <GlassCard className="p-12 text-center border-dashed border-[var(--text-muted)]/30">
-                                    <div className="text-4xl opacity-30 mb-4">🔒</div>
-                                    <p className="text-[var(--text-muted)]">No trophies unlocked yet.</p>
-                                </GlassCard>
-                            )}
-                        </div>
-
-                        {/* Leagues */}
-                        <div>
-                            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3"><span>🏳️</span> GARAGES</h2>
-                            {leagues.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {leagues.map((lm) => (
-                                        <GlassCard key={lm.league_id} className="p-5 flex items-center justify-between group cursor-pointer hover:bg-white/5" interactive onClick={() => router.push(`/leagues/${lm.league_id}`)}>
-                                            <div>
-                                                <div className="font-bold text-white text-lg group-hover:text-[var(--accent-cyan)]">{lm.leagues.name}</div>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <Badge variant="outline" size="sm" className="text-[10px]">{lm.role.toUpperCase()}</Badge>
-                                                    <span className="text-xs text-[var(--text-muted)]">{lm.leagues.members_count || '?'} Members</span>
-                                                </div>
-                                            </div>
-                                            <div className="text-2xl opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">→</div>
-                                        </GlassCard>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="p-4 md:p-6 rounded-xl border border-white/5 bg-[var(--bg-surface)] text-center">
-                                    <p className="text-[var(--text-muted)]">{isOwner ? "Not in any leagues yet." : "User is not in any leagues."}</p>
-                                    {isOwner && <F1Button href="/leagues" variant="secondary" size="sm" className="mt-3">Find a League</F1Button>}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* RIGHT COL: Friends & History */}
-                    <div className="space-y-8">
-                        {/* Friends */}
-                        <GlassCard className="p-4 md:p-6">
-                            <h3 className="text-lg font-bold text-white mb-4 flex items-center justify-between">
-                                <span>👥 PADDOCK</span>
-                                <span className="text-xs font-normal text-[var(--accent-gold)]">{friends.length} Friends</span>
-                            </h3>
-                            {friends.length > 0 ? (
-                                <div className="space-y-3">
-                                    {friends.map((f) => (
-                                        <div key={f.friend_id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer" onClick={() => router.push(`/profile/${f.friend_id}`)}>
-                                            <div 
-                                                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-black"
-                                                style={{ backgroundColor: f.friend?.favorite_team ? TEAM_COLORS[f.friend.favorite_team] : '#fff' }}
-                                            >
-                                                {f.friend?.username?.[0]?.toUpperCase() || 'F'}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-sm font-bold text-white truncate">{f.friend?.username || 'Unknown'}</div>
-                                                <div className="text-[10px] text-[var(--text-subtle)] truncate">{f.friend?.favorite_team || 'Free Agent'}</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-4 text-xs text-[var(--text-muted)]">No friends details available.</div>
-                            )}
-                        </GlassCard>
-
-                         {/* History */}
-                         <GlassCard className="p-4 md:p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-bold text-white flex items-center gap-2"><span>📜</span> HISTORY</h3>
-                                <button 
-                                    onClick={() => router.push('/history')}
-                                    className="text-xs font-bold text-[var(--accent-cyan)] hover:text-white uppercase tracking-wider flex items-center gap-1 transition-colors"
-                                >
-                                    View Full History →
-                                </button>
-                            </div>
-                            <div className="space-y-4">
-                                {predictions.length > 0 ? predictions.map((pred, i) => (
-                                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-[var(--bg-onyx)] border border-[var(--glass-border)]">
-                                        <div className="text-[10px] font-bold text-[var(--text-muted)] font-mono text-center leading-tight">
-                                            RACE<br/><span className="text-white text-sm">{i+1}</span>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="text-sm font-bold text-white truncate">{pred.races?.name || "Unknown GP"}</div>
-                                            <div className="text-xs text-[var(--accent-cyan)] font-mono">{pred.manual_score || 0} Pts</div>
-                                        </div>
-                                    </div>
-                                )) : (
-                                    <div className="text-[var(--text-muted)] text-sm italic py-2">No recent history.</div>
-                                )}
-                            </div>
-                        </GlassCard>
-                    </div>
+                {/* === RIGHT PANEL: TELEMETRY (65%) === */}
+                <div className="lg:w-[65%] p-6 bg-black/20">
+                    <ProfileTelemetry 
+                        profile={profile}
+                        achievements={achievements}
+                        predictions={predictions}
+                    />
                 </div>
-             )}
+                
+            </div>
         </div>
     </div>
   );

@@ -28,8 +28,10 @@ export default function FeedbackForm({ userId, initialEmail }: FeedbackFormProps
   // Auto-fill user data if logged in
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) return;
+        
         setFormData(prev => ({
             ...prev,
             email: user.email || prev.email
@@ -40,6 +42,8 @@ export default function FeedbackForm({ userId, initialEmail }: FeedbackFormProps
         if (profile) {
             setFormData(prev => ({ ...prev, name: profile.username || prev.name }));
         }
+      } catch (err) {
+        // Ignore auth errors
       }
     };
     if (!userId && !initialEmail) fetchUser();

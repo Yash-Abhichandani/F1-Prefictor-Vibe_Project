@@ -133,7 +133,10 @@ def template_welcome(username: str) -> str:
             <li>📊 <strong>Climb</strong> the global leaderboard</li>
         </ul>
         <p style="text-align: center;">
-            <a href="https://apexpredict.live/calendar" class="button">View Race Calendar</a>
+            <a href="https://apexpredict.live/guide" class="button" style="background: linear-gradient(135deg, #C9A962 0%, #A08035 100%); color: #000 !important;">Read the Manual</a>
+        </p>
+        <p style="text-align: center;">
+            <a href="https://apexpredict.live/calendar" style="color: #6B7280; text-decoration: underline; font-size: 12px;">Go straight to Calendar</a>
         </p>
         <p>The next race is coming up. Don't miss your chance to prove you know F1 better than anyone.</p>
         <p class="gold">See you on the grid! 🏁</p>

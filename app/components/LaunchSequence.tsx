@@ -101,17 +101,17 @@ export default function LaunchSequence({
       <div className="grid grid-cols-4 gap-2 md:gap-4 p-4 rounded-xl bg-black/60 border border-white/10 shadow-inner">
          {/* Days */}
          <div className="flex flex-col items-center">
-            <span className={`text-3xl md:text-5xl font-black font-mono tracking-tighter ${digitColor} ${glowShadow}`}>
-               {timeLeft.days > 0 ? formatNumber(timeLeft.days) : '00'}
-            </span>
+            <div className={`text-3xl md:text-5xl font-black font-mono tracking-tighter ${digitColor} ${glowShadow}`}>
+               <SlotCounter value={timeLeft.days} />
+            </div>
             <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Days</span>
          </div>
 
          {/* Hours */}
          <div className="flex flex-col items-center relative">
-            <span className={`text-3xl md:text-5xl font-black font-mono tracking-tighter ${digitColor} ${glowShadow}`}>
-               {formatNumber(timeLeft.hours)}
-            </span>
+            <div className={`text-3xl md:text-5xl font-black font-mono tracking-tighter ${digitColor} ${glowShadow}`}>
+               <SlotCounter value={timeLeft.hours} />
+            </div>
              <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Hrs</span>
              {/* Divider Dots */}
              <div className="absolute -left-2 md:-left-3 top-2 md:top-4 text-white/20 text-2xl animate-pulse">:</div>
@@ -119,18 +119,18 @@ export default function LaunchSequence({
 
          {/* Minutes */}
          <div className="flex flex-col items-center relative">
-            <span className={`text-3xl md:text-5xl font-black font-mono tracking-tighter ${digitColor} ${glowShadow}`}>
-               {formatNumber(timeLeft.minutes)}
-            </span>
+            <div className={`text-3xl md:text-5xl font-black font-mono tracking-tighter ${digitColor} ${glowShadow}`}>
+               <SlotCounter value={timeLeft.minutes} />
+            </div>
             <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Min</span>
             <div className="absolute -left-2 md:-left-3 top-2 md:top-4 text-white/20 text-2xl animate-pulse">:</div>
          </div>
 
          {/* Seconds */}
          <div className="flex flex-col items-center relative">
-            <span className={`text-3xl md:text-5xl font-black font-mono tracking-tighter ${showSeconds ? digitColor : 'text-[var(--text-subtle)]'} ${glowShadow}`}>
-               {showSeconds ? formatNumber(timeLeft.seconds) : '--'}
-            </span>
+            <div className={`text-3xl md:text-5xl font-black font-mono tracking-tighter ${showSeconds ? digitColor : 'text-[var(--text-subtle)]'} ${glowShadow}`}>
+               {showSeconds ? <SlotCounter value={timeLeft.seconds} /> : '--'}
+            </div>
             <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Sec</span>
              <div className="absolute -left-2 md:-left-3 top-2 md:top-4 text-white/20 text-2xl animate-pulse">:</div>
          </div>
@@ -138,3 +138,18 @@ export default function LaunchSequence({
     </div>
   );
 }
+
+const SlotCounter = ({ value }: { value: number }) => {
+  const str = value.toString().padStart(2, '0');
+  return (
+    <div className="flex">
+      {str.split('').map((char, i) => (
+        <div key={i} className="relative overflow-hidden h-[1em] w-[0.6em]">
+          <span key={char} className="absolute inset-0 flex items-center justify-center animate-slide-up">
+            {char}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};

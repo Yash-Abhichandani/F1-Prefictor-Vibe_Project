@@ -4,32 +4,25 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import GlassCard from "../components/ui/GlassCard";
 import AdUnit from "../components/AdUnit";
 
+import * as jolpica from "../services/jolpica";
+import type { JolpicaDriverStanding, JolpicaConstructorStanding } from "../services/jolpica";
+
 export default function StandingsPage() {
-  const [driverStandings, setDriverStandings] = useState<any[]>([]);
-  const [teamStandings, setTeamStandings] = useState<any[]>([]);
+  const [driverStandings, setDriverStandings] = useState<JolpicaDriverStanding[]>([]);
+  const [teamStandings, setTeamStandings] = useState<JolpicaConstructorStanding[]>([]);
   const [view, setView] = useState<"drivers" | "teams">("drivers");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const fetchDrivers = async () => {
-             const res = await fetch("https://api.jolpi.ca/ergast/f1/current/driverStandings.json");
-             const data = await res.json();
-             return data?.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings || [];
-        };
+        const [drivers, teams] = await Promise.all([
+          jolpica.getDriverStandings(),
+          jolpica.getConstructorStandings()
+        ]);
 
-        const fetchTeams = async () => {
-             const res = await fetch("https://api.jolpi.ca/ergast/f1/current/constructorStandings.json");
-             const data = await res.json();
-             return data?.MRData?.StandingsTable?.StandingsLists?.[0]?.ConstructorStandings || [];
-        };
-
-        const [driversResult, teamsResult] = await Promise.allSettled([fetchDrivers(), fetchTeams()]);
-
-        if (driversResult.status === "fulfilled") setDriverStandings(driversResult.value);
-        if (teamsResult.status === "fulfilled") setTeamStandings(teamsResult.value);
-        
+        setDriverStandings(drivers);
+        setTeamStandings(teams);
       } catch (err) {
         console.error("Error fetching standings:", err);
       } finally {
@@ -39,7 +32,8 @@ export default function StandingsPage() {
     fetchData();
   }, []);
 
-  const currentData = view === "drivers" ? driverStandings : teamStandings;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const currentData: any[] = view === "drivers" ? driverStandings : teamStandings;
   const top3 = currentData.slice(0, 3);
   const rest = currentData.slice(3);
 
@@ -85,12 +79,21 @@ export default function StandingsPage() {
                 <LoadingSpinner message="Updating Standings..." />
              </div>
         ) : currentData.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-             <div className="text-5xl mb-6 opacity-40">🏁</div>
-             <h2 className="text-2xl font-bold text-white mb-3">Standings Not Available</h2>
-             <p className="text-[var(--text-muted)] max-w-md">
-               The 2026 F1 season hasn't started yet or data is unavailable.
+          <div className="flex flex-col items-center justify-center py-24 text-center border border-white/5 rounded-2xl bg-white/[0.02]">
+             <div className="w-16 h-16 mb-6 rounded-full border border-[var(--f1-red)]/30 flex items-center justify-center animate-pulse">
+                <div className="text-3xl text-[var(--f1-red)]">📡</div>
+             </div>
+             <h2 className="text-2xl font-black text-white font-orbitron mb-2 tracking-widest uppercase">SIGNAL LOST</h2>
+             <p className="text-[var(--text-muted)] font-mono text-xs mb-8 tracking-wider">
+               // SYSTEM WAITING FOR INPUT...
              </p>
+             <button 
+               onClick={() => window.location.reload()}
+               className="px-6 py-3 bg-[var(--bg-onyx)] border border-[var(--glass-border)] text-white font-mono text-sm hover:border-[var(--accent-gold)] hover:text-[var(--accent-gold)] transition-all flex items-center gap-2"
+             >
+               <span className="w-2 h-2 bg-[var(--f1-red)] rounded-full animate-blink"/>
+               RECONNECT_UPLINK
+             </button>
           </div>
         ) : (
           <>

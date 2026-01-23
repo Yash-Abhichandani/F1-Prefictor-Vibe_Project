@@ -94,9 +94,10 @@ export default function ResetPasswordPage() {
   // Loading state while checking session
   if (checkingSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0B0C10] font-sans">
-        <div className="text-white font-orbitron animate-pulse text-xl tracking-widest">
-          VERIFYING RESET LINK...
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-void)] font-mono">
+        <div className="flex flex-col items-center gap-4">
+             <div className="w-12 h-12 border-4 border-[var(--f1-red)] border-t-transparent rounded-full animate-spin"></div>
+             <div className="text-[var(--text-muted)] text-sm font-mono tracking-widest animate-pulse">VERIFYING SECURTY TOKEN...</div>
         </div>
       </div>
     );
@@ -105,125 +106,157 @@ export default function ResetPasswordPage() {
   // No valid session - show error
   if (!isValidSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0B0C10] font-sans p-4">
-        <div className="bg-[#1F2833] p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-700 text-center">
-          <div className="text-6xl mb-4">🔒</div>
-          <h1 className="text-2xl font-black mb-4 text-white font-orbitron">
-            Invalid or Expired Link
-          </h1>
-          <p className="text-gray-400 mb-6">
-            This password reset link is invalid or has expired. Please request a new one.
-          </p>
-          <Link
-            href="/login"
-            className="inline-block bg-red-600 text-white px-6 py-3 rounded font-bold hover:bg-red-700 transition uppercase tracking-widest font-orbitron"
-          >
-            Back to Login
-          </Link>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-void)] font-mono p-4">
+        <div className="relative backdrop-blur-xl bg-[rgba(15,17,21,0.6)] border border-[var(--f1-red)] p-8 md:p-12 shadow-[0_20px_50px_rgba(255,24,1,0.1)] overflow-hidden max-w-md w-full">
+            <div className="absolute inset-0 pointer-events-none border border-white/5 rounded-tr-[30px] rounded-bl-[30px]"></div>
+            
+            <div className="text-6xl mb-6 text-center">🚫</div>
+            <h1 className="text-2xl font-black mb-4 text-white font-display uppercase tracking-tight text-center">
+              ACCESS DENIED
+            </h1>
+            <p className="text-[var(--text-muted)] mb-8 text-center text-xs uppercase tracking-widest">
+              INVALID_TOKEN // SESSION_EXPIRED
+            </p>
+            <Link
+              href="/login"
+              className="block w-full text-center bg-[var(--f1-red)] text-white py-4 text-sm font-mono uppercase tracking-widest hover:bg-[var(--f1-red-bright)] transition-all font-bold"
+            >
+              RETURN TO GATE
+            </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0B0C10] font-sans p-4">
-      <div className="bg-[#1F2833] p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-700">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-void)] font-mono p-4 relative overflow-hidden selection:bg-[var(--accent-cyan)] selection:text-black">
+      {/* Background Elements */}
+      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[var(--f1-red)] opacity-[0.04] blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[var(--accent-cyan)] opacity-[0.03] blur-[100px] rounded-full -translate-x-1/3 translate-y-1/3 pointer-events-none"></div>
+
+      <div className="relative z-10 w-full max-w-md">
         
-        <h1 className="text-3xl font-black mb-2 text-center text-white font-orbitron tracking-wide">
-          NEW PASSWORD
-        </h1>
-        <p className="text-gray-400 text-center mb-8 text-sm">
-          Enter your new password below
-        </p>
-        
-        {/* Message Display */}
-        {message && (
-          <div
-            className={`mb-6 p-4 rounded-lg text-sm font-medium flex items-start gap-3 ${
-              message.type === "success"
-                ? "bg-green-900/30 border border-green-700 text-green-400"
-                : "bg-red-900/30 border border-red-700 text-red-400"
-            }`}
-          >
-            <span className="text-lg">{message.type === "success" ? "✓" : "✕"}</span>
-            <span>{message.text}</span>
-          </div>
-        )}
-        
-        {/* New Password Field */}
-        <div className="relative mb-2">
-          <input
-            className="w-full bg-[#0B0C10] border border-gray-600 p-3 rounded text-white focus:border-red-500 outline-none transition pr-12"
-            type={showPassword ? "text" : "password"}
-            placeholder="New Password"
-            onChange={(e) => { setPassword(e.target.value); setMessage(null); }}
-            value={password}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition"
-          >
-            {showPassword ? "🙈" : "👁️"}
-          </button>
-        </div>
-        
-        {/* Password Strength Indicator */}
-        {password && (
-          <div className="mb-4">
-            <div className="flex gap-1 mb-1">
-              {[1, 2, 3, 4].map((level) => (
-                <div
-                  key={level}
-                  className={`h-1 flex-1 rounded ${
-                    level <= passwordStrength.level ? passwordStrength.color : "bg-gray-700"
-                  }`}
-                />
-              ))}
-            </div>
-            <p className={`text-xs ${passwordStrength.level <= 1 ? "text-red-400" : passwordStrength.level <= 2 ? "text-orange-400" : passwordStrength.level <= 3 ? "text-yellow-400" : "text-green-400"}`}>
-              {passwordStrength.text}
+        <div className="relative backdrop-blur-xl bg-[rgba(15,17,21,0.6)] border border-white/10 p-8 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
+             
+            {/* Chamfered Styling */}
+            <div className="absolute inset-0 pointer-events-none border border-white/5 rounded-tr-[30px] rounded-bl-[30px]"></div>
+
+            
+            {/* Corner Brackets */}
+            <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[var(--accent-cyan)] opacity-50"></div>
+            <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[var(--f1-red)] opacity-50 rounded-tr-[28px]"></div>
+            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[var(--f1-red)] opacity-50 rounded-bl-[28px]"></div>
+            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[var(--accent-cyan)] opacity-50"></div>
+
+            <h1 className="text-3xl font-black mb-2 text-white font-display uppercase tracking-tighter leading-none">
+              NEW PASSWORD
+            </h1>
+            <p className="text-[var(--text-muted)] text-center w-full md:text-left mb-8 text-xs font-mono uppercase tracking-widest">
+              // CREDENTIAL_UPDATE_SEQUENCE
             </p>
-          </div>
-        )}
-        
-        {/* Confirm Password Field */}
-        <input
-          className="w-full bg-[#0B0C10] border border-gray-600 p-3 mb-6 rounded text-white focus:border-red-500 outline-none transition"
-          type={showPassword ? "text" : "password"}
-          placeholder="Confirm New Password"
-          onChange={(e) => { setConfirmPassword(e.target.value); setMessage(null); }}
-          value={confirmPassword}
-        />
-        
-        {/* Password Match Indicator */}
-        {confirmPassword && (
-          <div className={`-mt-4 mb-4 text-xs ${password === confirmPassword ? "text-green-400" : "text-red-400"}`}>
-            {password === confirmPassword ? "✓ Passwords match" : "✕ Passwords do not match"}
-          </div>
-        )}
-        
-        {/* Submit Button */}
-        <button
-          onClick={handleResetPassword}
-          disabled={loading}
-          className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-3 rounded font-bold hover:from-blue-700 hover:to-cyan-700 transition shadow-[0_0_15px_rgba(37,99,235,0.4)] uppercase tracking-widest font-orbitron disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {loading ? (
-            <><span className="animate-spin">⟳</span> Updating...</>
-          ) : (
-            <>🔐 Update Password</>
-          )}
-        </button>
-        
-        {/* Back to Login Link */}
-        <div className="mt-6 text-center">
-          <Link href="/login" className="text-xs text-gray-600 hover:text-gray-400 transition">
-            ← Back to Login
-          </Link>
+            
+            {/* Message Display */}
+            {message && (
+              <div
+                className={`mb-6 p-4 text-xs font-mono uppercase tracking-wide border-l-2 flex items-start gap-3 ${
+                  message.type === "success"
+                    ? "bg-[rgba(16,185,129,0.1)] border-[var(--status-success)] text-[var(--status-success)]"
+                    : "bg-[rgba(255,24,1,0.1)] border-[var(--f1-red)] text-[var(--f1-red)]"
+                }`}
+              >
+                <span className="font-bold">{message.type === "success" ? "[SUCCESS]" : "[ERROR]"}</span>
+                <span>{message.text}</span>
+              </div>
+            )}
+            
+            {/* New Password Field */}
+            <div className="mb-4">
+              <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-[0.15em] mb-2 font-bold">NEW_CREDENTIAL</label>
+              <div className="relative">
+                <input
+                    className="w-full bg-[#1A1D21] border border-[#333] text-white p-4 text-sm font-mono focus:outline-none focus:border-[var(--accent-cyan)] focus:shadow-[0_0_15px_rgba(0,212,255,0.2)] transition-all placeholder:text-white/20 rounded-none pr-12"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="ENTER NEW PASSWORD"
+                    onChange={(e) => { setPassword(e.target.value); setMessage(null); }}
+                    value={password}
+                />
+                <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--accent-cyan)] text-xs uppercase font-bold tracking-wider"
+                >
+                    {showPassword ? "HIDE" : "SHOW"}
+                </button>
+              </div>
+            </div>
+            
+            {/* Password Strength Indicator */}
+            {password && (
+              <div className="mb-6">
+                <div className="flex gap-1 mb-2 h-1 bg-[#111]">
+                  {[1, 2, 3, 4].map((level) => (
+                    <div
+                      key={level}
+                      className={`flex-1 transition-all duration-300 ${
+                        level <= passwordStrength.level ? passwordStrength.color : "bg-transparent"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <div className="flex justify-between text-[10px] uppercase font-mono tracking-wider">
+                    <span className="text-[var(--text-muted)]">SECURITY_LEVEL:</span>
+                    <span style={{ color: passwordStrength.level >= 3 ? 'var(--status-success)' : 'var(--text-muted)' }}>{passwordStrength.text}</span>
+                </div>
+              </div>
+            )}
+            
+            {/* Confirm Password Field */}
+            <div className="mb-6">
+               <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-[0.15em] mb-2 font-bold">CONFIRM_CREDENTIAL</label>
+               <input
+                className="w-full bg-[#1A1D21] border border-[#333] text-white p-4 text-sm font-mono focus:outline-none focus:border-[var(--accent-cyan)] focus:shadow-[0_0_15px_rgba(0,212,255,0.2)] transition-all placeholder:text-white/20 rounded-none"
+                type={showPassword ? "text" : "password"}
+                placeholder="REPEAT NEW PASSWORD"
+                onChange={(e) => { setConfirmPassword(e.target.value); setMessage(null); }}
+                value={confirmPassword}
+              />
+            </div>
+            
+            {/* Password Match Indicator */}
+            {confirmPassword && (
+              <div className={`-mt-2 mb-6 text-[10px] uppercase tracking-wider font-mono ${password === confirmPassword ? "text-[var(--status-success)]" : "text-[var(--f1-red)]"}`}>
+                {password === confirmPassword ? "[ ✓ MATCH CONFIRMED ]" : "[ ✕ MISMATCH DETECTED ]"}
+              </div>
+            )}
+            
+            {/* Submit Button */}
+            <button
+              onClick={handleResetPassword}
+              disabled={loading}
+              className="w-full bg-[var(--accent-cyan)] hover:bg-[#33ddff] text-black font-bold py-4 text-sm font-mono uppercase tracking-widest transition-all hover:translate-x-1 hover:-translate-y-1 shadow-[4px_4px_0px_rgba(255,255,255,0.1)] active:shadow-none active:translate-x-0 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-6"
+            >
+              {loading ? (
+                <>PROCESSING...</>
+              ) : (
+                <>UPDATE SECURITY KEY</>
+              )}
+            </button>
+            
+            {/* Back to Login Link */}
+            <div className="text-center">
+              <Link href="/login" className="text-[10px] text-[var(--text-subtle)] hover:text-white transition uppercase tracking-[0.2em] font-mono">
+                [ ABORT TO LOGIN ]
+              </Link>
+            </div>
+            
         </div>
-        
       </div>
+      <style jsx global>{`
+        .glass-card-auth {
+          border-top-right-radius: 30px;
+          border-bottom-left-radius: 30px;
+        }
+      `}</style>
     </div>
   );
 }

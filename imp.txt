@@ -1,0 +1,95 @@
+📂 MASTERPLAN: F1 APEX REAL-TIME DATA ARCHITECTURE
+Objective: Build a fully dynamic, data-driven backend for "F1 Apex" that powers live telemetry, deep analytics, and real-time race tracking. Core Philosophy: "Hybrid Architecture." Use lightweight APIs for speed and a heavy Python engine for deep analytics.
+
+1. 🏗️ System Architecture (The "Pit Lane" Stack)
+We will use a Hybrid Stack to balance speed (React) and raw power (Python).
+Frontend: Next.js (React). Handles UI, fast data fetching, and user interaction.
+Microservice: Python (FastAPI). Wraps the FastF1 library to calculate heavy telemetry (Radar Charts, Tyre Deg).
+Database: PostgreSQL. Stores User Profiles, Predictions, and Leagues.
+External APIs:
+Jolpica-F1: The backbone (Schedules, Standings, Drivers).
+OpenF1: The live stream (Car position, Intervals, Live Ticker).
+2. 🗺️ The Data Source Map
+Agent Instruction: Implement these specific data pipelines for each UI component.
+
+Component	UI Section	Data Source	Update Frequency
+Race Calendar	Hero / Calendar Page	Jolpica-F1	Daily (Static)
+Driver/Team Lists	Profile / Standings	Jolpica-F1	Weekly (Static)
+Live Countdown	Hero Section	Jolpica-F1 (Schedule)	Real-time (Calculated)
+Live Ticker	Global Top Bar	OpenF1	Polling (10s)
+Radar Charts	Profile (Deep Stats)	Python (FastF1)	Post-Race (Cached)
+Car Telemetry	"Wind Tunnel" Visuals	OpenF1	Live / Replay
+User Predictions	Dashboard	PostgreSQL	Real-time
+3. 🐍 Phase 1: The Analytics Engine (Python/FastAPI)
+Reason: JavaScript cannot handle complex telemetry math. We need Python with FastF1.
+
+Task: Create a folder backend/analytics and initialize a FastAPI app.
+
+Endpoint 1: The "Driver Dossier" (Radar Chart Data)
+Route: GET /api/analysis/driver/{driver_code}/{year}
+Logic (FastF1):
+Load the last completed session.
+Calculate Qualifying Pace (vs Pole).
+Calculate Race Pace (Avg Lap Time vs Winner).
+Calculate Consistency (Standard Deviation of Lap Times).
+Return JSON: { "quali_score": 88, "race_score": 92, "consistency": 75 }.
+Output: Powers the Radar Chart on the Profile Page.
+Endpoint 2: The "Track Dominance"
+Route: GET /api/analysis/track-dominance/{session_id}
+Logic: Compare telemetry of Top 2 drivers to see who is faster in corners vs. straights.
+4. ⚡ Phase 2: The Core Data Layer (Next.js)
+Reason: Speed. Fetch these directly from the client or server components.
+
+Task: Create a Service Layer src/services/f1Data.ts.
+
+Function A: getNextRace()
+Source: https://api.jolpi.ca/ergast/f1/current/next.json
+Action: Parse the UTC time and pass it to the Hero Countdown component.
+Function B: getStandings()
+Source: https://api.jolpi.ca/ergast/f1/current/driverStandings.json
+Action: Populate the Leaderboard and Profile "Rank" badges.
+5. 📡 Phase 3: The "Live" Simulation (OpenF1)
+Reason: Real-time APIs are empty during the week. We must simulate "Live" status for the demo.
+
+Task: Implement the "Ghost Race" Protocol.
+
+Logic:
+Check: Is a race happening right now?
+YES: Poll OpenF1 Live Endpoint (https://api.openf1.org/v1/intervals?session_key=latest).
+NO (Most of the time): Replay the Last Race data loop.
+The "Replay" Script:
+Fetch position data from the previous Grand Prix.
+Feed it to the Live Ticker component loop.
+Result: The user always sees "VER Gap +0.3s" moving, making the site feel alive 24/7.
+6. 🧠 Phase 4: The Aggregation Logic (PostgreSQL)
+Reason: Scoring predictions requires comparing User Data (DB) vs Real Data (Jolpica).
+
+Task: Create a "Sunday Night Script" (Cron Job).
+
+Logic (scripts/score_race.ts):
+Wait for race status "Completed" (via Jolpica).
+Fetch Official Results (.../results.json).
+Fetch All User Predictions for that Round from DB.
+Loop & Score:
+Direct Hit (P1 correct): +25 pts.
+Podium Hit (In Top 3): +10 pts.
+Fastest Lap: +5 pts.
+Update:
+users.total_score
+users.accuracy_rating (Update the Radar Chart history).
+leagues.leaderboard.
+7. 📝 Agent Instructions (Copy & Paste)
+Role: Full-Stack Architect. Mission: Implement the Data Layer for F1 Apex.
+
+Step 1: Set up the Jolpica-F1 integration in src/services/jolpica.ts. Build the getNextRace and getDriverStandings functions. Connect these to the Hero Section (Countdown) and Profile Page (Rank).
+
+Step 2: Initialize a Python FastAPI microservice. Install fastf1 and pandas. Create an endpoint /api/radar/{driver} that calculates a simplified performance score based on the last race data.
+
+Step 3: Implement the OpenF1 Live Ticker. Create a hook useLiveTiming that polls OpenF1 for interval data. Add a "Demo Mode" fallback that replays static data if no live session is active.
+
+Step 4: Database Sync. Ensure the User model in our database has fields for favoriteTeam and predictionHistory. Write the logic to save a prediction to the DB.
+
+Constraint: All external API calls must be cached for at least 5 minutes to prevent rate limiting. Use generic mock data ONLY if the API is down, otherwise, use live data.
+
+🚀 Immediate Next Step
+Ask your agent to "Execute Step 1: Jolpica Integration". This will instantly fix your Hero Section Countdown and make the "Next Race" card real.

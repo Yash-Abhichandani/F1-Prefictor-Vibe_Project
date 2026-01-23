@@ -85,6 +85,7 @@ export default function PredictPage() {
         {/* THE FORM */}
         <PredictionForm 
             raceId={Number(params.id)} 
+            raceTime={race.race_time}
             onSuccess={() => router.push(`/submissions/${params.id}`)} 
         />
         

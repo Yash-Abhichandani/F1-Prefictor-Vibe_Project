@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/Current_Version-3.0-E10600?style=for-the-badge)
+![Version](https://img.shields.io/badge/Current_Version-3.1-E10600?style=for-the-badge)
 ![Commits](https://img.shields.io/badge/Total_Commits-93-00E5FF?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Production-00D26A?style=for-the-badge)
 
@@ -18,6 +18,7 @@
 
 | Version | Date | Codename | Highlights |
 |:--------|:-----|:---------|:-----------|
+| **v3.1** | Jan 23, 2026 | Live Telemetry | Real-time OpenF1 streams + FastF1 Analytics |
 | **v3.0** | Jan 21, 2026 | Analytics & Engagement | Analytics Dashboard, Live Timing, Email System |
 | **v2.5** | Jan 21, 2026 | Mobile Optimization | Session hardening, mobile responsive fixes |
 | **v2.4** | Jan 20, 2026 | Copyright & Contact | Legal disclaimers, contact info updates |
@@ -28,6 +29,27 @@
 | **v1.0** | Jan 10, 2026 | Genesis | Initial commit, core architecture |
 | **v0.9** | Jan 05, 2026 | The Blueprint | Tech stack selection, scoring logic definition |
 | **v0.1** | Nov 30, 2025 | Inception | Ideation, feasibility analysis, initial concept |
+
+---
+
+## 🏁 Version 3.1 — Live Telemetry Overhaul
+**Released:** January 23, 2026
+
+The "Race Day" update. We integrated OpenF1 for sub-second telemetry and FastF1 for deep learning analytics.
+
+### 📡 Live Features
+- **Live Command Center (`/live`)**: Real-time session status, weather, and race control messages.
+- **Timing Tower**: Animated leaderboard with gap/interval tracking.
+- **Telemetry Graphs**: High-frequency (3.7Hz) speed, throttle, and brake traces.
+
+### 🧠 Deep Analytics
+- **Driver Radar**: Hexagonal performance charts (Cornering vs Tyres vs Pace).
+- **Stint Analysis**: Tyre degradation modeling (backend ready).
+
+### 🔧 Backend
+- Added `api/live_f1.py` (OpenF1 Proxy).
+- Added `api/analytics_f1.py` (FastF1 Engine).
+- Integrated `httpx` and `redis` caching strategies.
 
 ---
 

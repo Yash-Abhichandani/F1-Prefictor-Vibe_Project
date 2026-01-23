@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { config } from "../../lib/config";
 import { DRIVERS_WITH_PLACEHOLDER } from "../lib/drivers";
@@ -8,8 +8,20 @@ import TemplateSelector, { DriverPositions } from "./TemplateSelector";
 
 const DRIVERS = DRIVERS_WITH_PLACEHOLDER;
 
-export default function PredictionForm({ raceId, onSuccess }: { raceId: number, onSuccess?: () => void }) {
+interface PredictionFormProps {
+  raceId: number;
+  raceTime?: string; // ISO timestamp for lockout check
+  onSuccess?: () => void;
+}
+
+export default function PredictionForm({ raceId, raceTime, onSuccess }: PredictionFormProps) {
   const [loading, setLoading] = useState(false);
+  
+  // Check if predictions should be locked (race has started)
+  const isLocked = useMemo(() => {
+    if (!raceTime) return false;
+    return new Date(raceTime) <= new Date();
+  }, [raceTime]);
   
   const [formData, setFormData] = useState({
     quali_p1: "", quali_p2: "", quali_p3: "",
@@ -121,6 +133,16 @@ export default function PredictionForm({ raceId, onSuccess }: { raceId: number, 
   return (
     <div className="space-y-8">
       
+      {/* LOCKED STATE - Race has started */}
+      {isLocked && (
+        <div className="telemetry-panel p-8 text-center bg-[#1a0505] border-[var(--f1-red)]">
+          <div className="text-4xl mb-4">🔒</div>
+          <h3 className="text-xl font-bold text-[var(--f1-red)] font-orbitron mb-2">PREDICTIONS LOCKED</h3>
+          <p className="text-[var(--text-muted)]">This race has already started. Predictions are no longer accepted.</p>
+        </div>
+      )}
+      
+      <div className={`space-y-8 ${isLocked ? 'opacity-50 pointer-events-none' : ''}`}>
       <div className="flex justify-end -mb-4">
         <TemplateSelector onApply={applyTemplate} currentPicks={formData as DriverPositions} />
       </div>
@@ -215,15 +237,16 @@ export default function PredictionForm({ raceId, onSuccess }: { raceId: number, 
           </div>
         </div>
       </div>
+      </div>
 
       {/* SUBMIT BUTTON */}
       <button 
         onClick={handleSubmit}
-        disabled={loading}
+        disabled={loading || isLocked}
         className="w-full btn-primary py-5 text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed group"
       >
         <span className="group-hover:scale-105 transition-transform inline-flex items-center gap-2">
-          {loading ? "Transmitting..." : (
+          {loading ? "Transmitting..." : isLocked ? "🔒 LOCKED" : (
             <>
               <span>📡</span>
               <span>Submit Predictions</span>

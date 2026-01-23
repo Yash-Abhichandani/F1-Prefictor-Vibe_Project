@@ -58,19 +58,19 @@
 
 :root {
   /* ═══════════════════════════════════════════
-     PREMIUM COLOR PALETTE
-     Inspired by luxury automotive + F1 TV
+     NEON TECHNICAL PALETTE
+     "Telemetry Command Center" Aesthetic
      ═══════════════════════════════════════════ */
   
-  /* Core Backgrounds - Deep Luxury */
-  --bg-void: #050506;
-  --bg-midnight: #0a0a0c;
-  --bg-onyx: #111114;
-  --bg-carbon: #161619;
-  --bg-graphite: #1c1c20;
-  --bg-slate: #232328;
+  /* Core Backgrounds - Asphalt & Carbon */
+  --bg-void: #0F1115;      /* Asphalt Black */
+  --bg-midnight: #16181C;  /* Carbon Dark */
+  --bg-onyx: #1c1c20;      /* Deep Graphite */
+  --bg-carbon: #232328;    /* Lighter Carbon */
+  --bg-graphite: #2a2a30;  /* Surface Grey */
+  --bg-slate: #323238;     /* Highlight Grey */
   
-  /* Text Hierarchy */
+  /* Text Hiearchy */
   --text-primary: #ffffff;
   --text-secondary: #a1a1aa;
   --text-muted: #71717a;
@@ -82,79 +82,60 @@
   --accent-cyan-dim: rgba(0, 212, 255, 0.15);
   --accent-cyan-glow: rgba(0, 212, 255, 0.4);
   
-  /* Premium Gold */
-  --accent-gold: #c9a962;
-  --accent-gold-bright: #e0c278;
-  --accent-gold-dim: rgba(201, 169, 98, 0.15);
-  --accent-gold-glow: rgba(201, 169, 98, 0.35);
+  /* Brand Gold */
+  --accent-gold: #F5C242;
+  --accent-gold-bright: #ffdb70;
+  --accent-gold-dim: rgba(245, 194, 66, 0.15);
+  --accent-gold-glow: rgba(245, 194, 66, 0.35);
   
-  /* F1 Signature Red */
-  --f1-red: #e10600;
-  --f1-red-bright: #ff1e1e;
-  --f1-red-dim: rgba(225, 6, 0, 0.15);
-  --f1-red-glow: rgba(225, 6, 0, 0.4);
+  /* F1 Race Red */
+  --f1-red: #FF1801;
+  --f1-red-bright: #ff4d3d;
+  --f1-red-dim: rgba(255, 24, 1, 0.15);
+  --f1-red-glow: rgba(255, 24, 1, 0.4);
   
-  /* Status Colors */
-  --status-success: #10b981;
-  --status-success-glow: rgba(16, 185, 129, 0.4);
-  --status-warning: #f59e0b;
-  --status-warning-glow: rgba(245, 158, 11, 0.4);
-  --status-error: #ef4444;
-  --status-error-glow: rgba(239, 68, 68, 0.4);
+  /* Telemetry Status Colors */
+  --status-success: #00FF00;  /* Telemetry Green */
+  --status-success-glow: rgba(0, 255, 0, 0.4);
+  --status-warning: #FFE600;  /* Telemetry Yellow */
+  --status-warning-glow: rgba(255, 230, 0, 0.4);
+  --status-error: #FF1801;    /* Telemetry Red */
+  --status-error-glow: rgba(255, 24, 1, 0.4);
+  --status-purple: #D103D1;   /* Fastest Sector */
   
-  /* Glassmorphism */
-  --glass-bg: rgba(17, 17, 20, 0.85);
-  --glass-bg-light: rgba(35, 35, 40, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --glass-border-light: rgba(255, 255, 255, 0.1);
-  --glass-blur: 24px;
+  /* Carbon Fiber Pattern Overlay */
+  --bg-carbon-pattern: repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 4px),
+                       repeating-linear-gradient(-45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 4px);
+  
+  /* Glassmorphism - Technical */
+  --glass-bg: rgba(15, 17, 21, 0.7); /* More transparent/tinted */
+  --glass-bg-light: rgba(30, 32, 36, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.1); 
+  --glass-border-light: rgba(255, 255, 255, 0.2);
+  --glass-blur: 20px; 
   
   /* Shadows - Layered Depth */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-xl: 0 16px 64px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4);
-  --shadow-glow-cyan: 0 0 40px var(--accent-cyan-glow), 0 0 80px rgba(0, 212, 255, 0.2);
-  --shadow-glow-gold: 0 0 40px var(--accent-gold-glow), 0 0 80px rgba(201, 169, 98, 0.2);
-  --shadow-glow-red: 0 0 40px var(--f1-red-glow), 0 0 80px rgba(225, 6, 0, 0.2);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.7);
+  --shadow-xl: 0 16px 64px rgba(0, 0, 0, 0.8);
+  --shadow-glow-cyan: 0 0 15px rgba(0, 212, 255, 0.25);
+  --shadow-glow-gold: 0 0 15px rgba(245, 194, 66, 0.25);
+  --shadow-glow-red: 0 0 15px rgba(255, 24, 1, 0.25);
   
-  /* Border Radius - Refined */
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-2xl: 32px;
+  /* Border Radius - Chamfered Look (Approx) */
+  --radius-xs: 2px;
+  --radius-sm: 4px; /* Default Card Radius */
+  --radius-md: 4px; /* Tighter */
+  --radius-lg: 6px; 
+  --radius-xl: 8px; /* Max curve */
+  --radius-2xl: 12px;
   --radius-full: 9999px;
   
-  /* Transitions */
-  --transition-quick: 150ms ease-out;
-  --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-smooth: 500ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 700ms cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* Legacy Compatibility */
-  --bg-gunmetal: var(--bg-midnight);
-  --bg-asphalt: var(--bg-void);
-  --bg-carbon-light: var(--bg-slate);
-  --accent-teal: var(--accent-cyan);
-  --accent-teal-glow: var(--accent-cyan-glow);
-  --accent-teal-dim: var(--accent-cyan-dim);
-  --signal-red: var(--f1-red);
-  --signal-red-glow: var(--f1-red-glow);
-  --alert-red: var(--f1-red);
-  --alert-red-glow: var(--f1-red-glow);
-  --signal-amber: var(--status-warning);
-  --signal-amber-glow: var(--status-warning-glow);
-  --alert-amber: var(--status-warning);
-  --alert-amber-glow: var(--status-warning-glow);
-  --success-green: var(--status-success);
-  --success-green-glow: var(--status-success-glow);
-  --text-ceramic: var(--text-primary);
-  --text-grey: var(--text-secondary);
-  --text-silver: var(--text-secondary);
-  --text-white: var(--text-primary);
-  --bg-slate-light: var(--bg-slate);
+  /* Transitions - Snap */
+  --transition-quick: 100ms ease-out; /* Snappier */
+  --transition-base: 200ms cubic-bezier(0.2, 0, 0, 1);
+  --transition-smooth: 400ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 /* ═══════════════════════════════════════════
@@ -172,9 +153,10 @@ html {
 body {
   background: var(--bg-void);
   background-image: 
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 212, 255, 0.03), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(201, 169, 98, 0.02), transparent),
-    radial-gradient(ellipse 60% 40% at 0% 80%, rgba(225, 6, 0, 0.02), transparent);
+    var(--bg-carbon-pattern),
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 212, 255, 0.05), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(201, 169, 98, 0.04), transparent),
+    radial-gradient(ellipse 60% 40% at 0% 80%, rgba(225, 6, 0, 0.04), transparent);
   color: var(--text-secondary);
   font-family: 'Geist', var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 16px;
@@ -189,9 +171,20 @@ body {
    ═══════════════════════════════════════════ */
 
 .font-display {
-  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--font-unbounded), var(--font-orbitron), sans-serif;
+  font-weight: 800;       /* Extra Bold for Aggression */
+  font-style: italic;     /* The Speed Look */
+  text-transform: uppercase;
+  letter-spacing: -0.03em; /* Tightened */
+}
+
+/* Enforce Speed Logic on Main Headers */
+h1, h2, h3, .page-title, .font-orbitron {
+  font-family: var(--font-unbounded), var(--font-orbitron), sans-serif !important;
+  font-weight: 800 !important;       
+  font-style: italic !important;     
+  text-transform: uppercase !important; 
+  letter-spacing: -0.04em !important;   
 }
 
 .font-heading {
@@ -815,12 +808,72 @@ select {
   border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
-/* Legacy Support - Direct CSS instead of @apply */
-.badge-teal {
-  background: var(--accent-cyan-dim);
-  color: var(--accent-cyan);
-  border: 1px solid rgba(0, 212, 255, 0.25);
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════ */
+
+@keyframes windLines {
+  0% { transform: translateX(-100%) skewX(-20deg); opacity: 0; }
+  20% { opacity: 0.3; }
+  80% { opacity: 0.3; }
+  100% { transform: translateX(200%) skewX(-20deg); opacity: 0; }
 }
+
+.animate-wind {
+  animation: windLines 3s linear infinite;
+}
+
+@keyframes glitch {
+  0% { clip-path: polygon(0 2%, 100% 2%, 100% 5%, 0 5%); transform: translate(0); }
+  20% { clip-path: polygon(0 15%, 100% 15%, 100% 15%, 0 15%); transform: translate(-2px, 2px); }
+  40% { clip-path: polygon(0 10%, 100% 10%, 100% 20%, 0 20%); transform: translate(2px, -2px); }
+  60% { clip-path: polygon(0 1%, 100% 1%, 100% 2%, 0 2%); transform: translate(-2px, 1px); }
+  80% { clip-path: polygon(0 50%, 100% 50%, 100% 60%, 0 60%); transform: translate(1px, -1px); }
+  100% { clip-path: polygon(0 90%, 100% 90%, 100% 95%, 0 95%); transform: translate(0); }
+}
+
+.animate-glitch {
+  animation: glitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@keyframes scanSlide {
+  0% { left: -10%; }
+  100% { left: 110%; }
+}
+
+@keyframes scanMask {
+  0% { mask-position: -200% 0; -webkit-mask-position: -200% 0; }
+  100% { mask-position: 200% 0; -webkit-mask-position: 200% 0; }
+}
+
+.animate-scan-slide {
+  animation: scanSlide 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Using mask-image for better browser support and smoother reveal */
+.animate-scan-reveal {
+  mask-image: linear-gradient(to right, transparent 45%, black 50%, transparent 55%);
+  -webkit-mask-image: linear-gradient(to right, transparent 45%, black 50%, transparent 55%);
+  mask-size: 200% 100%;
+  -webkit-mask-size: 200% 100%;
+  animation: scanMask 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+
 .badge-amber {
   background: rgba(245, 158, 11, 0.12);
   color: var(--status-warning);

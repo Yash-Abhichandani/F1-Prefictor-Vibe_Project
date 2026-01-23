@@ -72,11 +72,11 @@ export const DRIVERS_WITH_PLACEHOLDER = [
 // Driver lookup by team with numbers
 export const TEAMS_2026: Record<string, { driver: string; number: number }[]> = {
   "Red Bull": [
-    { driver: "Max Verstappen", number: 3 },
+    { driver: "Max Verstappen", number: 1 },
     { driver: "Isack Hadjar", number: 6 }
   ],
   "McLaren": [
-    { driver: "Lando Norris", number: 1 },
+    { driver: "Lando Norris", number: 4 },
     { driver: "Oscar Piastri", number: 81 }
   ],
   "Ferrari": [

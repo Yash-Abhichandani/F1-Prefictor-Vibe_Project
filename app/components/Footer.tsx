@@ -92,6 +92,7 @@ export default function Footer() {
                 { href: '/calendar', label: 'Race Calendar' },
                 { href: '/standings', label: 'Standings' },
                 { href: '/leagues', label: 'Leagues' },
+                { href: '/guide', label: 'System Guide' },
               ].map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className="text-[var(--text-muted)] hover:text-white transition-colors">

@@ -1,123 +1,123 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/Abhichandani-Yash-Manish/F1-Prefictor-Vibe_Project/main/public/developer_pixel_art.png" width="550" alt="Developer Pixel Art"/>
+<img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=900&size=40&duration=2000&pause=500&color=00E5FF&center=true&vCenter=true&width=900&height=70&lines=CORE_SYSTEMS_ONLINE;INITIALIZING_NEURAL_LINK...;WELCOME_TO_THE_MAINFRAME" alt="Typing SVG" />
 
-<br/>
-
-<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=24&duration=3000&pause=1000&color=00E5FF&center=true&vCenter=true&width=600&lines=System.out.println(%22Hello+World%22);Initializing+Creative+Protocols...;Loading+Full-Stack+Modules...;Compiling+F1+Obsession..." alt="Typing SVG" /></a>
+<img src="https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake.svg" alt="Snake animation" />
 
 </div>
 
+<br />
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#00E5FF', 'edgeLabelBackground':'#0d1117', 'tertiaryColor': '#0d1117'}} }%%
+classDiagram
+    class YashAbhichandani {
+        +String Role "Full-Stack Engineer"
+        +String Location "The Cloud"
+        +String Passion "Formula 1 🏎️"
+        +Code()
+        +Deploy()
+        +Win()
+    }
+    class TechStack {
+        +Frontend "Next.js / React"
+        +Backend "FastAPI / Python"
+        +Database "Supabase / SQL"
+    }
+    class Mission {
+        +Goal "Build the Future"
+        +Status "In Progress"
+    }
+    YashAbhichandani --|> TechStack : Masters
+    YashAbhichandani ..> Mission : Executes
+```
+
+<br />
+
+<details>
+<summary><b>📺 TERMINAL // ACCESS_BIO [Click to Expand]</b></summary>
 <br/>
 
-## 👨‍💻 `User.profile`
+```bash
+yash@mainframe:~$ whoami
+> Yash Abhichandani. Full-Stack Developer. F1 Fanatic.
+> I turn caffeine into fast, scalable code.
 
-```typescript
-const YashAbhichandani = {
-    role: "Full-Stack Developer",
-    location: "World Wide Web",
-    codebase: ["React", "Next.js", "Python", "FastAPI"],
-    passion: "Building digital experiences that feel magic ✨",
-    current_obsession: "Formula 1 🏎️ (Don't get me started on aerodynamics)",
-    status: "Shipping production-ready code",
-    coffee_level: "Critical ☕"
-};
+yash@mainframe:~$ cat current_status.json
+{
+  "focus": "F1-Predictor Vibe Project",
+  "status": "Shipping",
+  "mood": "Full Beans",
+  "music": "Synthwave"
+}
+
+yash@mainframe:~$ ./contact.sh
+> GitHub: @Abhichandani-Yash-Manish
+> LinkedIn: Connected
+> Email: yashraj2507@gmail.com
+```
+
+</details>
+
+---
+
+### 🚀 EXECUTION_PROTOCOL // WORKFLOW
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Yash
+    participant Code
+    participant Deploy
+
+    User->>Yash: "I have a complex idea..."
+    Yash->>Yash: Brainstorm & Design 🧠
+    Yash->>Code: Coding "Full Beans" mode ⚡
+    Code-->>Deploy: Push to Production 🚀
+    Deploy-->>User: "Here is your masterpiece."
 ```
 
 ---
 
-## 🛠️ `System.Architecture`
-
-<table>
-    <tr>
-        <td valign="top" width="33%">
-            <h3 align="center">Frontend_Core</h3>
-            <div align="center">
-                <img src="https://skillicons.dev/icons?i=react,nextjs,typescript,tailwind,figma&theme=dark" />
-            </div>
-            <p align="center"><i>"Pixel Perfect"</i></p>
-        </td>
-        <td valign="top" width="33%">
-            <h3 align="center">Backend_Engine</h3>
-            <div align="center">
-                <img src="https://skillicons.dev/icons?i=python,fastapi,supabase,postgresql,nodejs&theme=dark" />
-            </div>
-            <p align="center"><i>"High Performance"</i></p>
-        </td>
-        <td valign="top" width="33%">
-            <h3 align="center">DevOps_Terminal</h3>
-            <div align="center">
-                <img src="https://skillicons.dev/icons?i=git,github,vercel,docker,linux&theme=dark" />
-            </div>
-            <p align="center"><i>"CI/CD Pipeline"</i></p>
-        </td>
-    </tr>
-</table>
-
----
-
-## 📊 `Analytics.Dashboard`
+### � SYSTEM_MODULES // TECH_STACK
 
 <div align="center">
 
-<table>
-<tr>
-<td width="55%" valign="top">
-
-<img src="https://github-readme-stats.vercel.app/api?username=Abhichandani-Yash-Manish&show_icons=true&theme=tokyonight&hide_border=true&bg_color=0D1117&title_color=00E5FF&icon_color=00E5FF&text_color=FFFFFF&rank_icon=github" width="100%" />
-<br/>
-<img src="https://github-readme-streak-stats.herokuapp.com/?user=Abhichandani-Yash-Manish&theme=tokyonight&hide_border=true&background=0D1117&ring=00E5FF&fire=F97316&currStreakLabel=00E5FF&sideLabels=FFFFFF" width="100%" />
-
-</td>
-<td width="45%" valign="top">
-
-### 🏆 The Obsession Project
-
-<a href="https://apexpredict.live">
-  <img src="https://github-readme-stats.vercel.app/api/pin/?username=Abhichandani-Yash-Manish&repo=F1-Prefictor-Vibe_Project&theme=tokyonight&hide_border=true&bg_color=0D1117&title_color=00E5FF&icon_color=F97316" width="100%" />
-</a>
-
-**F1 Apex** is where my engineering meets my passion.
-- **Stack**: Next.js 16, FastAPI, Supabase
-- **Scale**: 15k+ LOC, Real-time stats
-- **Vibe**: Telemetry-inspired UI
-
-[![Live Demo](https://img.shields.io/badge/�_SYSTEM_ONLINE-apexpredict.live-00E5FF?style=for-the-badge&logo=vercel&logoColor=black)](https://apexpredict.live)
-
-</td>
-</tr>
-</table>
-
-</div>
-
----
-
-## ⚡ `Git.Activity_Log`
-
-<div align="center">
-  <img src="https://github-readme-activity-graph.vercel.app/graph?username=Abhichandani-Yash-Manish&bg_color=0D1117&color=00E5FF&line=00E5FF&point=F97316&area=true&area_color=00E5FF&hide_border=true" width="95%" />
-</div>
-
----
-
-## � `Connect.Protocol`
-
-<div align="center">
-
-| Platform | Frequency | Status |
+| **Frontend (Interface)** | **Backend (Core)** | **DevOps (Deployment)** |
 |:---:|:---:|:---:|
-| <a href="https://linkedin.com/in/yourprofile"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=flat-square&logo=linkedin&logoColor=white" /></a> | High | `Connected` |
-| <a href="mailto:yashraj2507@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=flat-square&logo=gmail&logoColor=white" /></a> | Always On | `Listening` |
-| <a href="https://apexpredict.live"><img src="https://img.shields.io/badge/Website-00E5FF?style=flat-square&logo=google-chrome&logoColor=black" /></a> | 24/7 | `Live` |
+| <img src="https://skillicons.dev/icons?i=react,nextjs,ts,tailwind,figma,threejs&theme=dark" height="55" /> | <img src="https://skillicons.dev/icons?i=python,fastapi,supabase,postgres,nodejs,redis&theme=dark" height="55" /> | <img src="https://skillicons.dev/icons?i=git,github,vercel,docker,linux,bash&theme=dark" height="55" /> |
 
 </div>
 
-<br/>
+---
+
+### 📊 TELEMETRY_DATA // STATS_&_HEATMAP
 
 <div align="center">
 
-*"Code is like humor. When you have to explain it, it’s bad."*
+<img src="https://github-readme-stats.vercel.app/api?username=Abhichandani-Yash-Manish&show_icons=true&theme=tokyonight&hide_border=true&bg_color=0D1117&title_color=00E5FF&icon_color=00E5FF&text_color=FFFFFF" height="150" />
+<img src="https://github-readme-streak-stats.herokuapp.com/?user=Abhichandani-Yash-Manish&theme=tokyonight&hide_border=true&background=0D1117&ring=00E5FF&fire=F97316&currStreakLabel=00E5FF&sideLabels=FFFFFF" height="150" />
 
-![Profile Views](https://komarev.com/ghpvc/?username=Abhichandani-Yash-Manish&color=00E5FF&style=flat-square&label=Traffic)
+<br/>
+<br/>
 
+<!-- Contribution Graph (Heatmap) -->
+<img src="https://github-readme-activity-graph.vercel.app/graph?username=Abhichandani-Yash-Manish&bg_color=0D1117&color=00E5FF&line=00E5FF&point=F97316&area=true&area_color=00E5FF&hide_border=true" width="100%" />
+
+</div>
+
+---
+
+### 📂 MISSION_LOGS // PROJECT_DATABASE
+
+| ID | Mission Name | Class | Status | Access |
+|:--:|:--|:--:|:--:|:--:|
+| `001` | **F1 Predictor** | *Flagship* | `ACTIVE` 🟢 | [**[DEPLOY]**](https://apexpredict.live) |
+| `002` | **System Portfolio** | *Identity* | `STABLE` 🔵 | [**[ROOT]**](https://github.com/Abhichandani-Yash-Manish) |
+| `003` | **Secret Project** | *R&D* | `CLASSIFIED` 🔴 | `[DENIED]` |
+
+---
+
+<div align="center">
+  <code> END_OF_TRANSMISSION // 2026 </code>
 </div>

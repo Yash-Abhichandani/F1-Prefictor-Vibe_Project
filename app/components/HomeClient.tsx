@@ -1,208 +1,190 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { config } from "../../lib/config";
-import TelemetryLoader from "./TelemetryLoader";
-import GlassCard from "./ui/GlassCard";
+import { Calendar, Trophy, Users, BarChart3, Swords, User, BookOpen } from "lucide-react";
+import { motion } from "framer-motion";
+import LoadingSpinner from "./LoadingSpinner";
 import F1Button from "./ui/F1Button";
+import GlitchText from "./ui/GlitchText";
+import GlassCard from "./ui/GlassCard";
 import Badge from "./ui/Badge";
-import LaunchSequence from "./LaunchSequence";
 import AdUnit from "./AdUnit";
+import LaunchSequence from "./LaunchSequence";
+import TelemetryLoader from "./TelemetryLoader";
 import LiveSessionBanner from "./LiveSessionBanner";
+import AmbientNumberBg from "./AmbientNumberBg";
 
-export interface Race {
-  id: number;
-  name: string;
-  circuit: string;
-  race_time: string;
-  quali_time?: string;
-  is_sprint?: boolean;
+// Typewriter Component
+const TypewriterText = ({ text }: { text: string }) => {
+  const letters = Array.from(text);
+  
+  const container = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.015, delayChildren: 0.5 },
+    },
+  };
+
+  const child = {
+    visible: { opacity: 1, display: "inline-block" },
+    hidden: { opacity: 0, display: "none" },
+  };
+  
+  return (
+    <motion.div
+      variants={container}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+      className="text-base md:text-2xl text-[var(--text-secondary)] max-w-xl leading-relaxed font-light inline-block w-full text-center lg:text-left"
+    >
+      {letters.map((letter, index) => (
+        <motion.span variants={child} key={index}>
+          {letter === " " ? "\u00A0" : letter}
+        </motion.span>
+      ))}
+      <motion.span 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: [0, 1, 0] }} 
+        transition={{ repeat: Infinity, duration: 0.8 }} 
+        className="text-[var(--f1-red)] font-bold ml-0.5 inline-block"
+      >
+        _
+      </motion.span>
+    </motion.div>
+  );
+};
+
+// Helper function to format race weekend dates (e.g., "14-16 MAR")
+function getRaceWeekendDates(dateStr: string) {
+  if (!dateStr) return "TBC";
+  const date = new Date(dateStr);
+  const month = date.toLocaleDateString("en-US", { month: "short" }).toUpperCase();
+  const day = date.getDate();
+  const startDay = Math.max(1, day - 2); // Assume Friday-Sunday
+  return `${startDay}-${day} ${month}`;
+}
+
+interface UserStandings {
+  rank: number;
+  total: number;
+  score: number;
 }
 
 interface HomeClientProps {
-  initialNextRace: Race | null;
+  userStandings: UserStandings | null; 
+  nextRace: any;
+  lastResults: any[];
 }
 
-export default function HomeClient({ initialNextRace }: HomeClientProps) {
-  const [nextRace, setNextRace] = useState<Race | null>(initialNextRace);
-  // Critical data is pre-fetched, so logic loading is done. 
-  // We only wait for the animation (introFinished).
-  const [loading, setLoading] = useState(false); 
+export default function HomeClient({ userStandings, nextRace, lastResults }: HomeClientProps) {
   const [introFinished, setIntroFinished] = useState(false);
-  const [lastResults, setLastResults] = useState<any[]>([]);
   const [topDrivers, setTopDrivers] = useState<any[]>([]);
-  const [userStandings, setUserStandings] = useState<any[]>([]);
-
-  useEffect(() => {
-    // Secondary Data: Stats & Standings (Parallel)
-    // These run in background and don't block the UI
-    const fetchSecondaryData = async () => {
-      const fetchResults = async () => {
-          try {
-              const res = await fetch("https://api.jolpi.ca/ergast/f1/current/last/results.json");
-              const data = await res.json();
-              if (data.MRData.RaceTable.Races.length > 0) {
-                setLastResults(data.MRData.RaceTable.Races[0].Results.slice(0, 3));
-              }
-          } catch (e) { console.error("Results Error", e); }
-      };
-
-      const fetchDrivers = async () => {
-          try {
-              const res = await fetch("https://api.jolpi.ca/ergast/f1/current/driverStandings.json");
-              const data = await res.json();
-              if (data.MRData.StandingsTable.StandingsLists.length > 0) {
-                setTopDrivers(data.MRData.StandingsTable.StandingsLists[0].DriverStandings.slice(0, 5));
-              }
-          } catch (e) { console.error("Drivers Error", e); }
-      };
-
-      const fetchUserStandings = async () => {
-          try {
-              const res = await fetch(`${config.apiUrl}/standings`);
-              if (res.ok) {
-                const data = await res.json();
-                setUserStandings(data);
-              }
-          } catch (e) { console.error("User Standings Error", e); }
-      };
-
-      await Promise.allSettled([fetchResults(), fetchDrivers(), fetchUserStandings()]);
-    };
-
-    fetchSecondaryData();
-  }, []);
-
-  const getRaceWeekendDates = (raceDateIso: string) => {
-    if (!raceDateIso) return "TBD";
-    const raceDate = new Date(raceDateIso);
-    const sunday = new Date(raceDate);
-    const friday = new Date(sunday);
-    friday.setDate(sunday.getDate() - 2);
-    const start = friday.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }).toUpperCase();
-    const end = sunday.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }).toUpperCase();
-    return `${start} - ${end}`;
-  };
-
-  // Combined Loading State: Show loader ONLY if animation is not finished.
-  // We ignore 'loading' state for blocking because data is pre-fetched.
-  if (!introFinished) {
-     return <TelemetryLoader onComplete={() => setIntroFinished(true)} />;
-  }
 
   // Nav Items Configuration
   const navItems = [
-    { href: '/calendar', icon: '📅', label: 'CALENDAR', desc: 'Full 2026 Schedule', color: 'cyan' },
-    { href: '/leaderboard', icon: '🏆', label: 'LEADERBOARD', desc: 'Global Rankings', color: 'gold' },
-    { href: '/leagues', icon: '👥', label: 'LEAGUES', desc: 'Squad Battles', color: 'cyan' },
-    { href: '/standings', icon: '📊', label: 'STANDINGS', desc: 'Driver & Constructor', color: 'cyan' },
-    { href: '/rivalries', icon: '⚔️', label: 'RIVALRIES', desc: 'Head-to-Head', color: 'red' },
-    { href: '/profile', icon: '👤', label: 'PROFILE', desc: 'Stats & History', color: 'gold' },
+    { href: '/calendar', icon: <Calendar size={24} strokeWidth={1.5} />, label: 'CALENDAR', desc: 'Full 2026 Schedule' },
+    { href: '/leaderboard', icon: <Trophy size={24} strokeWidth={1.5} />, label: 'LEADERBOARD', desc: 'Global Rankings' },
+    { href: '/leagues', icon: <Users size={24} strokeWidth={1.5} />, label: 'LEAGUES', desc: 'Squad Battles' },
+    { href: '/standings', icon: <BarChart3 size={24} strokeWidth={1.5} />, label: 'STANDINGS', desc: 'Driver & Constructor' },
+    { href: '/rivalries', icon: <Swords size={24} strokeWidth={1.5} />, label: 'RIVALRIES', desc: 'Head-to-Head' },
+    { href: '/guide', icon: <BookOpen size={24} strokeWidth={1.5} />, label: 'MANUAL', desc: 'System Protocols' },
+    { href: '/profile', icon: <User size={24} strokeWidth={1.5} />, label: 'PROFILE', desc: 'Stats & History' },
   ];
 
-  return (
-    <div className="min-h-screen bg-[var(--bg-void)] relative overflow-x-hidden selection:bg-[var(--accent-gold)] selection:text-black">
-      
-      {/* Noise Texture Overlay */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[1]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
+  useEffect(() => {
+    // Simulate Intro Delay
+    const timer = setTimeout(() => setIntroFinished(true), 2500);
+    
+    // Fetch Top Drivers (Client Side)
+    const fetchDrivers = async () => {
+        try {
+            const res = await fetch("https://api.jolpi.ca/ergast/f1/current/driverStandings.json");
+            const data = await res.json();
+            if (data.MRData.StandingsTable.StandingsLists.length > 0) {
+              setTopDrivers(data.MRData.StandingsTable.StandingsLists[0].DriverStandings.slice(0, 5));
+            }
+        } catch (e) { console.error("Drivers Error", e); }
+    };
+    fetchDrivers();
 
-      {/* Background Ambience */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[var(--accent-cyan)] opacity-[0.04] blur-[180px] rounded-full" />
-          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[var(--f1-red)] opacity-[0.04] blur-[180px] rounded-full" />
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[var(--bg-void)] bg-[url('/grid-pattern.svg')] text-white overflow-hidden relative selection:bg-[var(--f1-red)] selection:text-white">
+      
+      {/* Ambient Number Background - Season Year */}
+      <AmbientNumberBg number="26" color="#FF1801" opacity={15} />
+      
+      <LiveSessionBanner />
+      
+      {/* Intro Overlay */}
+      <div className={`fixed inset-0 z-50 transition-transform duration-1000 ease-in-out ${introFinished ? '-translate-y-full' : 'translate-y-0'}`}>
+         <TelemetryLoader onComplete={() => setIntroFinished(true)} />
       </div>
 
-      <LiveSessionBanner />
-
       {/* === HERO SECTION === */}
-      <section className="relative pt-12 pb-24 md:pt-24 md:pb-40 border-b border-white/5 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/5 via-transparent to-transparent z-10">
-        <div className="max-w-7xl mx-auto px-6 relative">
-          
-          <div className="flex flex-col lg:flex-row items-end justify-between gap-16 lg:gap-8">
-            {/* Left Content */}
-            <div className="max-w-3xl animate-fade-in-up relative z-20">
-              
-              <div className="flex flex-wrap items-center gap-3 mb-8">
-                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 transition-colors cursor-default">
-                   <div className="flex gap-1.5">
-                      {[1,2,3,4,5].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-[var(--f1-red)] animate-pulse" style={{ animationDelay: `${i*0.2}s` }} />)}
-                   </div>
-                   <span className="text-[10px] font-bold tracking-[0.2em] text-white/70 uppercase">Season 2026 Live</span>
-                </div>
-                
-                {/* Unofficial Fan Project Badge - Copyright Protection */}
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/30 backdrop-blur-md">
-                   <span className="text-[10px] font-bold tracking-[0.15em] text-[var(--accent-cyan)] uppercase">⚡ Unofficial Fan Project</span>
-                </div>
-              </div>
-              
-              <h1 className="text-5xl sm:text-6xl md:text-[5.5rem] lg:text-[7rem] font-black tracking-tighter mb-6 md:mb-8 font-orbitron leading-[0.9] md:leading-[0.85] uppercase">
-                <span className="text-white block drop-shadow-2xl">Predict.</span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--f1-red)] via-[var(--f1-red-bright)] to-[var(--f1-red)] block animate-gradient-x">Dominate.</span>
-              </h1>
-              
-              <p className="text-base md:text-2xl text-[var(--text-secondary)] max-w-xl leading-relaxed mb-8 md:mb-12 font-light">
-                The advanced telemetry hub for true F1 enthusiasts. Analyze data, outsmart the grid, and claim the championship.
-              </p>
+      <section className="relative min-h-[90vh] flex flex-col justify-center pt-24 pb-12 overflow-hidden">
+        {/* Background Elements - Boosted Opacity */}
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[var(--f1-red)] opacity-[0.08] blur-[100px] rounded-full translate-x-1/2 -translate-y-1/2 animate-pulse-slow pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[var(--accent-cyan)] opacity-[0.06] blur-[80px] rounded-full -translate-x-1/3 translate-y-1/3 pointer-events-none"></div>
 
-              <div className="flex flex-wrap gap-5">
-                 <F1Button href="/calendar" variant="primary" size="xl" icon="🏎️" pulse className="shadow-[0_0_40px_rgba(225,6,0,0.3)] hover:shadow-[0_0_60px_rgba(225,6,0,0.5)] border-none">
-                    START PREDICTING
+        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24">
+            
+            {/* Left Content: Headline */}
+            <div className="flex-1 text-center lg:text-left">
+               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--f1-red)]/30 bg-[var(--f1-red)]/10 text-[var(--f1-red)] text-xs font-bold tracking-widest mb-6 animate-fade-in-up">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--f1-red)] animate-pulse"></span>
+                  SEASON 2026 ACTIVE
+               </div>
+               
+               <h1 className="text-6xl md:text-8xl lg:text-9xl font-black italic tracking-tighter leading-[0.85] mb-8 font-orbitron">
+                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-gray-400 animate-fade-in-up">PREDICT</span>
+                 <span className="block text-[var(--f1-red)] animate-fade-in-up [animation-delay:200ms] scale-105 origin-left">PERFORM</span>
+                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-gray-400 via-white to-white animate-fade-in-up [animation-delay:400ms]">PREVAIL</span>
+               </h1>
+               
+               {/* Typewriter Effect Sub-header */}
+               <div className="h-24 md:h-20 mb-8 md:mb-12 flex items-center justify-center lg:justify-start">
+                   <TypewriterText text="The advanced telemetry hub for true F1 enthusiasts. Analyze data, outsmart the grid, and claim the championship." />
+               </div>
+
+               <div className="flex flex-wrap gap-5 justify-center lg:justify-start animate-fade-in-up [animation-delay:800ms]">
+                 <F1Button href="/predict" variant="primary" size="lg" className="shadow-[0_0_30px_rgba(255,24,1,0.3)] hover:shadow-[0_0_50px_rgba(255,24,1,0.5)]">
+                    ENTER PADDOCK [ &gt; ]
                  </F1Button>
-                 <F1Button href="/leagues" variant="outline" size="xl" className="backdrop-blur-sm hover:bg-white/10">
+                 <F1Button href="/leagues" variant="ghost" size="lg">
                     JOIN LEAGUE
                  </F1Button>
-              </div>
+               </div>
             </div>
-
-            {/* Right Content - Featured Race Card */}
+            
+            {/* Right Content: Next Race Card */}
             {nextRace && (
-                <div className="w-full lg:w-[480px] animate-fade-in-up relative z-20" style={{ animationDelay: '0.2s' }}>
-                    <div className="relative group perspective-1000">
-                        {/* Glow Effect */}
-                        <div className="absolute -inset-1 bg-gradient-to-br from-[var(--f1-red)] to-[var(--accent-gold)] rounded-3xl blur-xl opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-                        
-                        <GlassCard variant="default" className="p-8 relative overflow-hidden h-full transform transition-all duration-500 hover:-translate-y-2 hover:rotate-1 border-white/10 shadow-2xl" withNoise>
-                             {/* Circuit Track SVG Overlay (Subtle) */}
-                             <div className="absolute -top-10 -right-10 w-80 h-80 opacity-[0.07] rotate-12 pointer-events-none">
-                                <svg viewBox="0 0 100 100" className="w-full h-full stroke-white fill-none stroke-[2]">
-                                    <path d="M20,50 Q40,20 60,50 T90,50" />
-                                </svg>
-                             </div>
-
-                             <div className="flex items-start justify-between mb-10 relative">
-                                <div>
-                                    <h3 className="text-[10px] font-bold text-[var(--accent-gold)] tracking-[0.2em] uppercase mb-2">UPCOMING EVENT</h3>
-                                    <div className="text-4xl font-black text-white font-orbitron leading-none">{nextRace.name.split(' ')[0]}</div>
-                                    <div className="text-xl font-bold text-white/50 font-orbitron">GRAND PRIX</div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider mb-1">Round</div>
-                                    <div className="text-3xl font-bold text-white font-mono">01</div>
-                                </div>
-                             </div>
-
-                             <div className="space-y-6 relative">
-                                <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)] bg-white/5 p-3 rounded-lg border border-white/5">
+                <div className="flex-1 w-full max-w-md animate-fade-in-up [animation-delay:1000ms]">
+                    <div className="relative group">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-[var(--f1-red)] to-[var(--accent-gold)] rounded-2xl opacity-20 group-hover:opacity-40 blur transition duration-500"></div>
+                        <GlassCard className="p-8 relative overflow-hidden flex flex-col items-center text-center border-t border-white/20">
+                             <div className="absolute top-0 right-0 p-20 bg-[var(--f1-red)] opacity-[0.05] blur-3xl rounded-full"></div>
+                             
+                             <div className="mb-2 text-[10px] font-bold tracking-[0.2em] text-[var(--accent-gold)] uppercase">Up Next on Grid</div>
+                             <h2 className="text-3xl font-black italic text-white mb-6 font-orbitron">{nextRace.name.replace(' Grand Prix', '')}</h2>
+                             
+                             <div className="w-full space-y-6 mb-8">
+                                <LaunchSequence targetTime={nextRace.race_time} label="SESSION STARTS IN:" showSeconds={true} />
+                                
+                                <div className="flex items-center justify-center gap-3 text-sm text-[var(--text-secondary)] bg-white/5 p-3 rounded-lg border border-white/5">
                                     <span className="text-[var(--f1-red)]">📍</span>
                                     <span className="font-medium tracking-wide">{nextRace.circuit}</span>
                                 </div>
-                                
-                                <div>
-                                    {nextRace.quali_time ? (
-                                        <LaunchSequence targetTime={nextRace.quali_time} label="PREDICTION WINDOW" />
-                                    ) : (
-                                        <div className="text-center p-8 border border-white/10 rounded-xl bg-black/20">
-                                            <div className="text-xl font-mono text-[var(--text-muted)] animate-pulse">TIMING TBC</div>
-                                        </div>
-                                    )}
-                                </div>
                              </div>
                              
-                             <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
-                                <Badge variant="gold" className="bg-[var(--accent-gold)]/10 text-[var(--accent-gold)] border-[var(--accent-gold)]/20">{getRaceWeekendDates(nextRace.race_time)}</Badge>
-                                <Link href={`/predict/${nextRace.id}`} className="flex items-center gap-2 text-white text-xs font-bold tracking-[0.15em] hover:text-[var(--accent-cyan)] transition-colors group/link uppercase">
-                                   Enter Paddock <span className="group-hover/link:translate-x-1 transition-transform">→</span>
+                             <div className="w-full">
+                                <Link href={`/predict/${nextRace.id}`} className="block w-full text-center py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold tracking-[0.15em] transition-all uppercase group/btn">
+                                   Enter Paddock <span className="ml-1 group-hover/btn:translate-x-1 inline-block transition-transform">→</span>
                                 </Link>
                              </div>
                         </GlassCard>
@@ -215,17 +197,12 @@ export default function HomeClient({ initialNextRace }: HomeClientProps) {
       
       {/* === AD PLACEMENT === */}
       <div className="max-w-7xl mx-auto px-6 relative z-20">
-        <AdUnit 
-          slot="8932489234" // Placeholder slot ID
-          format="horizontal"
-          style={{ minHeight: "100px" }}
-          label="Advertisement"
-        />
+        <AdUnit label="Advertisement" slot="header-slot" />
       </div>
 
-      {/* === COMMAND CENTER GRID === */}
-      <section className="py-24 px-6 relative z-10">
-          <div className="max-w-7xl mx-auto">
+      {/* === COMMAND CENTER (SYSTEM MODULES) === */}
+      <section className="py-24 border-b border-white/5 relative z-10">
+          <div className="max-w-7xl mx-auto px-6">
              <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
                  <div>
                     <h2 className="text-3xl md:text-5xl font-black text-white font-orbitron mb-4">
@@ -234,45 +211,33 @@ export default function HomeClient({ initialNextRace }: HomeClientProps) {
                     <div className="h-1 w-24 bg-[var(--f1-red)] shadow-[0_0_15px_var(--f1-red)] rounded-full text-left" />
                  </div>
                  
-                 {userStandings.length > 0 && (
-                     <div className="flex items-center gap-4 bg-white/5 rounded-2xl px-6 py-4 border border-white/5 backdrop-blur-sm">
-                        <div className="text-right">
-                           <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Current Ranking</div>
-                           <div className="text-white font-bold text-sm tracking-wide">GLOBAL LEAGUE</div>
-                        </div>
-                        <div className="text-4xl font-bold text-[var(--accent-gold)] font-mono">#1</div>
-                     </div>
-                 )}
+                 {/* Current Ranking Widget - Now Dynamic */}
+                 <div className="flex items-center gap-4 bg-white/5 rounded-2xl px-6 py-4 border border-white/5 backdrop-blur-sm">
+                    <div className="text-right">
+                       <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Your Ranking</div>
+                       <div className="text-white font-bold text-sm tracking-wide">
+                         {userStandings ? `OF ${userStandings.total}` : "GLOBAL LEAGUE"}
+                       </div>
+                    </div>
+                    <div className="text-4xl font-bold text-[var(--accent-gold)] font-mono">
+                      {userStandings ? `#${userStandings.rank}` : "--"}
+                    </div>
+                 </div>
              </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 animate-fade-in-up [animation-delay:200ms]">
                  {navItems.map((item, i) => (
                      <Link key={item.href} href={item.href} className="group h-full">
-                         <GlassCard 
-                            className="h-full p-8 transition-all duration-500 group-hover:-translate-y-2 group-hover:border-white/20 bg-gradient-to-b from-white/[0.03] to-transparent"
-                            variant="default"
-                            interactive
-                         >
-                            <div className="flex justify-between items-start mb-8">
-                                <div className={`text-4xl p-4 rounded-2xl transition-all duration-500 bg-white/5 border border-white/5 group-hover:scale-110
-                                    ${item.color === 'cyan' ? 'text-[var(--accent-cyan)] group-hover:shadow-[0_0_30px_rgba(0,212,255,0.2)]' : 
-                                      item.color === 'gold' ? 'text-[var(--accent-gold)] group-hover:shadow-[0_0_30px_rgba(201,169,98,0.2)]' :
-                                      'text-[var(--f1-red)] group-hover:shadow-[0_0_30px_rgba(225,6,0,0.2)]'}
-                                `}>
-                                    {item.icon}
-                                </div>
-                                <div className={`text-2xl transition-all duration-500 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0
-                                    ${item.color === 'cyan' ? 'text-[var(--accent-cyan)]' : item.color === 'gold' ? 'text-[var(--accent-gold)]' : 'text-[var(--f1-red)]'}
-                                `}>→</div>
+                         <div className="h-full bg-[var(--bg-carbon)]/30 border border-white/10 hover:border-[var(--f1-red)] hover:shadow-[0_0_15px_rgba(255,24,1,0.2)] transition-all duration-200 p-4 flex flex-col items-center justify-center gap-3 relative overflow-hidden group-hover:bg-[var(--bg-carbon)]/60 rounded-sm">
+                            <div className="absolute top-1 right-1 text-[8px] font-mono text-white/20 group-hover:text-[var(--f1-red)]">SYS_{i+1}</div>
+                            <div className={`text-white/60 group-hover:text-white transition-colors duration-200`}>
+                                {item.icon}
                             </div>
-                            
-                            <h3 className="text-2xl font-bold text-white mb-2 font-orbitron tracking-wide group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-white/60 transition-all">
-                                {item.label}
-                            </h3>
-                            <p className="text-[var(--text-secondary)] text-sm group-hover:text-white/80 transition-colors leading-relaxed">
-                                {item.desc}
-                            </p>
-                         </GlassCard>
+                            <div className="text-center">
+                                <div className="text-xs font-bold font-mono tracking-widest text-white/80 group-hover:text-white uppercase mb-1">{item.label}</div>
+                            </div>
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-10 bg-[linear-gradient(transparent_50%,rgba(0,0,0,1)_50%)] bg-[size:4px_4px] pointer-events-none" />
+                         </div>
                      </Link>
                  ))}
              </div>
@@ -284,7 +249,7 @@ export default function HomeClient({ initialNextRace }: HomeClientProps) {
           <div className="max-w-7xl mx-auto">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   
-                  {/* Podium Module - Linked to Classification (Results) */}
+                  {/* Podium Module */}
                   <Link href="/classification" className="group block">
                       <div className="bg-[var(--bg-carbon)] rounded-3xl border border-white/5 p-8 relative overflow-hidden h-full transition-all duration-300 group-hover:border-[var(--accent-gold)]/50 group-hover:shadow-[0_0_30px_rgba(201,169,98,0.1)]">
                           <div className="absolute top-0 right-0 p-32 bg-[var(--accent-gold)] opacity-[0.03] blur-3xl rounded-full transition-opacity duration-500 group-hover:opacity-[0.08]"></div>
@@ -316,72 +281,53 @@ export default function HomeClient({ initialNextRace }: HomeClientProps) {
                                   ))}
                               </div>
                           ) : (
-                              <div className="h-48 flex flex-col items-center justify-center text-[var(--text-muted)] border border-dashed border-white/10 rounded-xl bg-white/[0.01]">
-                                  <span className="text-4xl mb-4 grayscale opacity-20">🏁</span>
-                                  <span className="text-sm tracking-widest uppercase">Awaiting Season Start</span>
+                              <div className="text-center py-12">
+                                  <LoadingSpinner variant="minimal" message="FETCHING_PODIUM_DATA" />
                               </div>
                           )}
                       </div>
                   </Link>
 
-                  {/* Championship Module - Linked to Standings */}
+                  {/* Driver Standings Module */}
                   <Link href="/standings" className="group block">
-                      <div className="bg-[var(--bg-carbon)] rounded-3xl border border-white/5 p-8 relative overflow-hidden h-full transition-all duration-300 group-hover:border-[var(--f1-red)]/50 group-hover:shadow-[0_0_30px_rgba(225,6,0,0.1)]">
-                           <div className="absolute top-0 left-0 p-32 bg-[var(--f1-red)] opacity-[0.03] blur-3xl rounded-full transition-opacity duration-500 group-hover:opacity-[0.08]"></div>
+                      <div className="bg-[var(--bg-carbon)] rounded-3xl border border-white/5 p-8 relative overflow-hidden h-full transition-all duration-300 group-hover:border-[var(--f1-red)]/50 group-hover:shadow-[0_0_30px_rgba(255,24,1,0.1)]">
+                          <div className="absolute bottom-0 left-0 p-32 bg-[var(--f1-red)] opacity-[0.03] blur-3xl rounded-full transition-opacity duration-500 group-hover:opacity-[0.08]"></div>
+                          
+                          <div className="flex items-center justify-between mb-8">
+                              <div>
+                                  <h3 className="text-xl font-bold text-white font-orbitron mb-1 group-hover:text-[var(--f1-red)] transition-colors">DRIVER STANDINGS</h3>
+                                  <div className="text-[10px] text-[var(--f1-red)] tracking-widest uppercase font-bold">Top 5 Contenders</div>
+                              </div>
+                              <Badge variant="outline" className="group-hover:bg-[var(--f1-red)] group-hover:text-white transition-colors">LIVE</Badge>
+                          </div>
 
-                           <div className="flex items-center justify-between mb-8">
-                               <div>
-                                  <h3 className="text-xl font-bold text-white font-orbitron mb-1 group-hover:text-[var(--f1-red)] transition-colors">WDC STANDINGS</h3>
-                                  <div className="text-[10px] text-[var(--f1-red)] tracking-widest uppercase font-bold">Driver Championship</div>
-                               </div>
-                               <Badge variant="outline" className="group-hover:bg-[var(--f1-red)] group-hover:text-white transition-colors">LIVE</Badge>
-                           </div>
-
-                           {topDrivers.length > 0 ? (
-                               <div className="space-y-2 relative z-10">
-                                   {topDrivers.map((driver, i) => (
-                                       <div key={i} className="flex items-center justify-between p-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors rounded-lg px-4">
-                                           <div className="flex items-center gap-4">
-                                               <span className={`text-xs font-bold font-mono w-6 ${i===0 ? 'text-[var(--accent-gold)]' : 'text-white/30'}`}>{driver.position}</span>
-                                               <span className="font-bold text-white text-sm tracking-wide">{driver.Driver.familyName.toUpperCase()}</span>
-                                           </div>
-                                           <span className="font-mono font-bold text-[var(--text-secondary)] text-sm">{driver.points} <span className="text-[10px] text-[var(--text-muted)]">PTS</span></span>
-                                       </div>
-                                   ))}
-                                   <div className="pt-4 text-center">
-                                       <span className="inline-block text-[10px] text-[var(--accent-cyan)] group-hover:text-white tracking-[0.2em] uppercase font-bold transition-all border-b border-transparent group-hover:border-white pb-1">View Full Standings →</span>
-                                   </div>
-                               </div>
-                           ) : (
-                               <div className="h-48 flex flex-col items-center justify-center text-[var(--text-muted)] border border-dashed border-white/10 rounded-xl bg-white/[0.01]">
-                                   <span className="text-4xl mb-4 grayscale opacity-20">📊</span>
-                                   <span className="text-sm tracking-widest uppercase">Data Unavailable</span>
-                               </div>
-                           )}
+                          <div className="space-y-3 relative z-10">
+                              {topDrivers.length > 0 ? topDrivers.map((d, i) => (
+                                  <div key={d.Driver.driverId} className="flex items-center justify-between p-3 rounded-lg border border-white/5 hover:bg-white/5 transition-colors">
+                                      <div className="flex items-center gap-4">
+                                          <span className="font-mono text-white/40 w-4 text-sm">{i+1}</span>
+                                          <div>
+                                              <div className="font-bold text-white text-sm">{d.Driver.givenName} {d.Driver.familyName.toUpperCase()}</div>
+                                              <div className="text-[10px] text-[var(--text-muted)] uppercase">{d.Constructors[0].name}</div>
+                                          </div>
+                                      </div>
+                                      <div className="font-mono font-bold text-[var(--accent-cyan)]">{d.points} PTS</div>
+                                  </div>
+                              )) : (
+                                  <div className="text-center py-12">
+                                     <LoadingSpinner variant="minimal" message="SYNCING_GRID_DATA" />
+                                  </div>
+                              )}
+                          </div>
                       </div>
                   </Link>
-
               </div>
           </div>
       </section>
 
-      {/* === AD PLACEMENT 2 === */}
-      <div className="max-w-7xl mx-auto px-6 relative z-20">
-        <AdUnit 
-          slot="homepage_footer"
-          format="horizontal"
-          style={{ minHeight: "90px" }}
-          label="Sponsored"
-        />
-      </div>
-
-      {/* === CTA FOOTER with Parallax Feel === */}
-      <section className="py-40 px-6 text-center relative overflow-hidden z-10">
-          <div className="absolute inset-0 bg-gradient-to-t from-[var(--f1-red)]/20 via-transparent to-transparent z-0 pointer-events-none"></div>
-          {/* Glowing Orb */}
-          <div className="absolute bottom-[-100px] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--f1-red)] opacity-10 blur-[150px] rounded-full pointer-events-none"></div>
-
-          <div className="max-w-4xl mx-auto relative z-10">
+      {/* CTA Section */}
+      <section className="py-24 relative overflow-hidden">
+          <div className="max-w-4xl mx-auto relative z-10 text-center px-6">
               <h2 className="text-5xl md:text-7xl font-black text-white mb-8 font-orbitron tracking-tighter">
                   LIGHTS OUT AND<br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-white/40">AWAY WE GO.</span>

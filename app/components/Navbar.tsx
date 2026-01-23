@@ -27,12 +27,14 @@ export default function Navbar() {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
         if (error || !user) {
-           if (error) console.error("Auth error:", error);
+           // Silent fail for no session
            setUser(null);
            setProfile(null);
-           // If there was an error (like User Not Found), clear simple session garbage
+           if (error && !error.message.includes("Auth session missing")) {
+              // Only log real errors
+              console.debug("Auth check failed:", error.message);
+           }
            if (error) {
-             // Don't await signOut - fire and forget to prevent blocking
              supabase.auth.signOut().then(() => {}, () => {});
            }
         } else {
@@ -127,21 +129,22 @@ export default function Navbar() {
             </Link>
 
             {/* Center: Navigation */}
-            <div className="hidden lg:flex items-center bg-white/5 rounded-full px-6 py-2 border border-white/5 backdrop-blur-md">
+            <div className="hidden lg:flex items-center bg-[#0F1115]/80 rounded-full px-2 py-1 border border-[var(--glass-border)] backdrop-blur-md shadow-lg">
               {navLinks.map((link) => (
                 <Link 
                   key={link.href}
                   href={link.href}
-                  className={`px-5 py-1 text-sm font-medium transition-colors relative group ${
+                  className={`px-4 py-2 text-sm font-mono transition-all duration-300 relative group flex items-center ${
                     link.href === '/admin' 
-                      ? 'text-[var(--f1-red)] hover:text-red-400 font-bold tracking-wider' 
+                      ? 'text-[var(--f1-red)] font-bold tracking-wider' 
                       : 'text-[var(--text-secondary)] hover:text-white'
                   }`}
                 >
-                  <span className="relative z-10">{link.label}</span>
-                  <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 transition-all duration-300 ${
-                    link.href === '/admin' ? 'bg-[var(--f1-red)] shadow-[0_0_10px_var(--f1-red)]' : 'bg-[var(--f1-red)]'
-                  } group-hover:w-1/2`} />
+                  <span className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-[var(--accent-cyan)] font-bold mr-1">[</span>
+                  <span className="relative z-10 tracking-wide uppercase text-xs">{link.label}</span>
+                  <span className="opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-[var(--accent-cyan)] font-bold ml-1">]</span>
+                  
+                  {/* Active Indicator (optional, sticking to hover brackets for now) */}
                 </Link>
               ))}
             </div>

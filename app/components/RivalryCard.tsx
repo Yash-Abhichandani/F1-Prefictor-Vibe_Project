@@ -19,19 +19,21 @@ interface RivalryCardProps {
     avatar?: string;
   };
   races: number;
+  gridAverage?: number; // Real average from database
   onChallenge?: () => void;
 }
 
-export default function RivalryCard({ player1, player2, races, onChallenge }: RivalryCardProps) {
+export default function RivalryCard({ player1, player2, races, gridAverage, onChallenge }: RivalryCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   // Fallback if player2 is missing or same as player1 (e.g. only 1 user in system)
   const isSolo = !player2 || player1.name === player2.name;
   
+  // Use real grid average if provided, otherwise fallback to reasonable estimate
   const p2 = isSolo ? {
     name: "THE GRID",
     driver: "",
-    points: Math.floor(player1.points * 0.9), // Mock average
+    points: gridAverage ?? Math.round(player1.points * 0.85), // Use real avg or fallback
     avatar: ""
   } : player2;
 

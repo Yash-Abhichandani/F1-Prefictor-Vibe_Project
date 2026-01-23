@@ -11,6 +11,9 @@ import Badge from "../components/ui/Badge";
 import F1Button from "../components/ui/F1Button";
 import AdUnit from "../components/AdUnit";
 import CircuitGuide from "../components/CircuitGuide";
+import TrackMap from "../components/TrackMap";
+import { CIRCUIT_DETAILS } from "../lib/circuitDetails";
+
 
 interface Race {
   id: number;
@@ -26,6 +29,7 @@ interface Race {
 }
 
 // Map race names to country codes and regions
+// Race Name to Code Mapper
 const getRaceCode = (name: string): string => {
   const n = name.toLowerCase();
   if (n.includes("australian")) return "AUS";
@@ -65,87 +69,9 @@ const getRaceRegion = (name: string): string => {
   return "Other";
 };
 
-// Accurate Track SVG Paths (ViewBox 0 0 100 100 approx)
-// Note: These are simplified but recognizable representations of the actual circuits.
-const TRACK_PATHS: Record<string, string> = {
-  // Albert Park (Australia) - fluid lake shape
-  AUS: "M75,25 L85,30 L85,45 L70,55 L65,75 L55,75 L45,85 L30,80 L20,70 L25,60 L20,50 L30,30 L50,25 Z",
-  
-  // Bahrain - stop-start, tight corners
-  BHR: "M80,20 L85,35 L70,40 L60,35 L50,45 L40,40 L35,50 L25,45 L20,30 L30,25 L45,20 L60,25 Z",
-  
-  // Jeddah (Saudi) - long, winding
-  SAU: "M85,15 L90,80 L80,90 L70,80 L65,85 L55,80 L50,90 L40,80 L35,85 L25,80 L20,30 L30,20 L40,25 L50,20 Z",
-  
-  // Suzuka (Japan) - Figure 8
-  JPN: "M30,70 L20,60 L30,50 L40,55 L50,45 L45,35 L55,25 L65,30 L70,25 L80,30 L85,45 L75,55 L65,50 L55,60 L60,70 L50,80 L40,75 Z",
-  
-  // Shanghai (China) - "Snail"
-  CHN: "M30,30 C20,20 40,10 50,30 L80,30 L85,70 L70,80 L40,80 L30,60 L40,50 L35,40 Z",
-  
-  // Miami - Stadium section
-  MIA: "M30,20 L70,20 L80,30 L80,50 L75,60 L80,80 L60,80 L50,70 L40,75 L30,70 L25,50 L30,40 Z",
-  
-  // Imola (Emilia Romagna)
-  EMI: "M25,60 L35,50 L50,55 L70,45 L80,50 L85,70 L60,75 L50,70 L40,75 Z",
 
-  // Monaco - Tight corners
-  MCO: "M35,35 L50,30 L60,35 L70,30 L75,45 L80,50 L75,60 L60,65 L50,60 L45,65 L35,60 L30,50 Z",
-  
-  // Barcelona (Spain)
-  ESP: "M25,70 L25,30 L40,25 L65,30 L80,25 L85,45 L75,60 L65,65 L50,60 L40,70 Z",
-  
-  // Montreal (Canada)
-  CAN: "M20,60 L30,30 L50,25 L75,25 L85,40 L80,70 L65,75 L55,70 L40,75 Z",
-  
-  // Red Bull Ring (Austria) - Short
-  AUT: "M30,60 L35,40 L60,30 L80,35 L85,55 L70,65 L45,70 Z",
-  
-  // Silverstone (UK)
-  GBR: "M40,70 L30,60 L35,40 L50,30 L65,35 L75,30 L85,45 L80,60 L65,65 L55,60 L50,65 Z",
-  
-  // Hungaroring (Hungary)
-  HUN: "M35,70 L30,50 L40,30 L55,35 L65,30 L80,35 L80,55 L70,60 L60,55 L50,65 Z",
-  
-  // Spa (Belgium) - Long
-  BEL: "M30,75 L25,50 L40,35 L55,30 L70,25 L85,35 L80,55 L65,60 L55,55 L45,65 Z",
-  
-  // Zandvoort (Netherlands)
-  NED: "M35,60 L30,40 L45,30 L60,35 L75,30 L80,50 L70,65 L55,60 L45,65 Z",
-  
-  // Monza (Italy) - High speed
-  ITA: "M30,70 L35,30 L65,25 L80,30 L85,50 L75,70 L55,65 L45,70 Z",
-  
-  // Madrid (New) - Estimated
-  MAD: "M30,40 L70,30 L80,50 L70,70 L50,75 L40,70 L30,60 Z",
-  
-  // Baku (Azerbaijan) - Castle
-  AZE: "M20,60 L85,60 L85,40 L75,30 L65,40 L55,35 L45,40 L35,35 L25,40 L20,50 Z",
-  
-  // Singapore - Marina Bay
-  SGP: "M25,65 L25,35 L40,30 L60,35 L75,30 L80,50 L75,70 L60,75 L50,70 L40,75 Z",
-  
-  // Austin (USA)
-  USA: "M30,75 L25,50 L35,30 L55,35 L70,30 L80,50 L75,70 L60,65 L50,75 Z",
-  
-  // Mexico City
-  MEX: "M30,60 L25,40 L40,30 L70,30 L80,50 L75,70 L60,65 L50,75 Z",
-  
-  // Interlagos (Brazil)
-  BRA: "M35,70 L30,50 L40,40 L55,35 L75,40 L80,60 L65,70 L50,65 Z",
-  
-  // Las Vegas - Strip
-  LVS: "M20,65 L25,30 L45,30 L50,45 L70,45 L75,30 L85,30 L85,65 L75,75 L30,75 Z",
-  
-  // Lusail (Qatar)
-  QAT: "M30,60 L35,30 L55,25 L75,30 L80,55 L70,70 L50,75 Z",
-  
-  // Yas Marina (Abu Dhabi)
-  ABU: "M30,70 L25,45 L40,30 L70,30 L80,50 L75,75 L60,70 L50,75 Z",
-  
-  // Fallback
-  GP: "M30,50 L50,25 L70,50 L50,75 Z"
-};
+
+import { getSeasonSchedule } from "../services/jolpica";
 
 export default function CalendarPage() {
   const [races, setRaces] = useState<Race[]>([]);
@@ -154,18 +80,22 @@ export default function CalendarPage() {
   const [regionFilter, setRegionFilter] = useState<string>('All');
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   useEffect(() => {
     const fetchRaces = async () => {
-      const { data } = await supabase
-        .from("races")
-        .select("*")
-        .order("race_time", { ascending: true });
-      if (data) setRaces(data);
+      try {
+        const data = await getSeasonSchedule();
+        const mappedRaces: Race[] = data.map((r: any) => ({
+             id: Number(r.round),
+             name: r.raceName,
+             circuit: r.Circuit.circuitName,
+             race_time: `${r.date}T${r.time || "14:00:00Z"}`,
+             quali_time: r.Qualifying ? `${r.Qualifying.date}T${r.Qualifying.time}` : undefined,
+             is_sprint_weekend: !!r.Sprint
+        }));
+        setRaces(mappedRaces);
+      } catch (e) {
+          console.error("Failed to fetch schedule", e);
+      }
       setLoading(false);
     };
     fetchRaces();
@@ -291,11 +221,20 @@ export default function CalendarPage() {
                         GRAND PRIX
                       </div>
                       
-                      {/* Circuit */}
-                      <div className="flex items-center gap-2 text-[var(--text-muted)] mb-6">
-                        <span className="text-[var(--f1-red)]">📍</span>
-                        <span>{nextRace.circuit}</span>
-                        <CircuitGuide circuitName={nextRace.circuit} />
+                      {/* Circuit Data Grid (Monospace) */}
+                      <div className="grid grid-cols-3 gap-4 mb-6 border-t border-white/10 pt-4">
+                          <div>
+                              <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Length</div>
+                              <div className="text-lg font-mono text-white font-bold">{CIRCUIT_DETAILS[getRaceCode(nextRace.name)]?.lengthKM || "5.4"}KM</div>
+                          </div>
+                          <div>
+                              <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Laps</div>
+                              <div className="text-lg font-mono text-white font-bold">{CIRCUIT_DETAILS[getRaceCode(nextRace.name)]?.laps || "57"}</div>
+                          </div>
+                          <div>
+                              <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Record</div>
+                              <div className="text-lg font-mono text-[var(--accent-gold)] font-bold">{CIRCUIT_DETAILS[getRaceCode(nextRace.name)]?.lapRecord?.time || "1:31.09"}</div>
+                          </div>
                       </div>
 
                       {/* Countdown */}
@@ -319,23 +258,20 @@ export default function CalendarPage() {
 
                     {/* Track Outline */}
                     <div className="hidden lg:block">
-                      <div className="w-48 h-48 relative">
-                        <svg viewBox="0 0 100 100" className="w-full h-full opacity-40">
-                          <path 
-                            d={TRACK_PATHS[getRaceCode(nextRace.name)] || TRACK_PATHS.GP}
-                            fill="none"
-                            stroke="var(--accent-gold)"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-5xl font-black text-[var(--accent-gold)]/30 font-mono">
+                      <div className="w-64 h-64 relative">
+                        <TrackMap 
+                          code={getRaceCode(nextRace.name)} 
+                          variant="gold" 
+                          className="scale-125"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <span className="text-9xl font-black text-white/20 font-display tracking-tighter select-none">
                             {getRaceCode(nextRace.name)}
                           </span>
                         </div>
                       </div>
                     </div>
+
                   </div>
                 </GlassCard>
               </div>
@@ -372,89 +308,83 @@ export default function CalendarPage() {
                     const isNext = nextRace?.id === race.id;
                     const raceCode = getRaceCode(race.name);
                     const raceIndex = races.findIndex(r => r.id === race.id) + 1;
+                    const details = CIRCUIT_DETAILS[raceCode];
                     
                     return (
                       <Link
                         key={race.id}
                         id={`race-${race.id}`}
                         href={isPast ? `/submissions/${race.id}` : `/predict/${race.id}`}
-                        className={`group relative p-6 rounded-xl border transition-all duration-300 overflow-hidden
+                        className={`group relative rounded-xl border transition-all duration-300 overflow-hidden flex flex-col
                           ${isNext 
-                            ? 'border-[var(--accent-gold)] bg-[var(--accent-gold-dim)] shadow-[var(--shadow-glow-gold)]' 
+                            ? 'border-[var(--accent-gold)] bg-[var(--bg-midnight)] shadow-[var(--shadow-glow-gold)] ring-1 ring-[var(--accent-gold)]/50' 
                             : isPast 
-                            ? 'border-[var(--glass-border)] bg-[var(--bg-onyx)] opacity-60 hover:opacity-80' 
-                            : 'border-[var(--glass-border)] bg-[var(--bg-onyx)] hover:border-[var(--accent-cyan)] hover:shadow-[var(--shadow-glow-cyan)]'
+                            ? 'border-[var(--glass-border)] bg-[var(--bg-onyx)] opacity-70 hover:opacity-100 hover:border-[var(--glass-border-light)]' 
+                            : 'border-[var(--glass-border)] bg-[var(--bg-carbon)] hover:border-[var(--accent-cyan)] hover:shadow-[var(--shadow-glow-cyan)] hover:-translate-y-1'
                           }
                         `}
                       >
-                        {/* Round Number */}
-                        <div className="absolute top-3 right-3">
-                          <span className={`text-xs font-mono ${isNext ? 'text-[var(--accent-gold)]' : 'text-[var(--text-subtle)]'}`}>
-                            R{raceIndex.toString().padStart(2, '0')}
-                          </span>
+                        {/* Header: Date & Round */}
+                        <div className="flex justify-between items-start p-4 border-b border-[var(--glass-border)] bg-[var(--bg-void)]/30">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-wider">
+                              {new Date(race.race_time).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}
+                            </span>
+                            <span className={`text-xl font-bold font-display tracking-tight ${isNext ? 'text-[var(--accent-gold)]' : 'text-white'}`}>
+                              {raceCode}
+                            </span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className="text-[10px] font-mono text-[var(--text-subtle)]">R{raceIndex.toString().padStart(2, '0')}</span>
+                            {/* Live/Next Indicator (Terminal Style) */}
+                            {isNext && (
+                               <div className="mt-1 px-1.5 py-0.5 bg-[var(--status-warning)]/10 border border-[var(--status-warning)]/50 rounded-[1px]">
+                                  <span className="text-[9px] font-mono font-bold text-[var(--status-warning)] tracking-wider blink">[ STATUS: UPCOMING ]</span>
+                               </div>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Status Badge */}
+                        {/* Map Area */}
+                        <div className="h-40 relative p-4 flex items-center justify-center bg-[var(--bg-void)]/20">
+                           {/* Grid Background */}
+                           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px]" />
+                           
+                           {/* The Map */}
+                           <div className="w-full h-full z-10 p-2 transform group-hover:scale-110 transition-transform duration-500">
+                              <TrackMap 
+                                code={raceCode} 
+                                variant={isNext ? 'gold' : isPast ? 'default' : 'cyan'} 
+                              />
+                           </div>
+                        </div>
+
+                        {/* Technical Data Block */}
+                        <div className="p-4 grid grid-cols-3 gap-2 border-t border-[var(--glass-border)] bg-[var(--bg-onyx)]/50">
+                          <div className="flex flex-col">
+                            <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">Len</span>
+                            <span className="text-xs font-mono text-white">{details?.lengthKM || "-"}km</span>
+                          </div>
+                          <div className="flex flex-col text-center border-x border-[var(--glass-border)] px-2">
+                            <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">Laps</span>
+                            <span className="text-xs font-mono text-white">{details?.laps || "-"}</span>
+                          </div>
+                          <div className="flex flex-col text-end">
+                            <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">Rec</span>
+                            <span className="text-xs font-mono text-white">{details?.lapRecord?.time || "-"}</span>
+                          </div>
+                        </div>
+
+                        {/* Footer / CTA */}
                         {isNext && (
-                          <div className="absolute top-3 left-3">
-                            <span className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-[var(--accent-gold)] text-black text-xs font-bold">
-                              <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
-                              NEXT
-                            </span>
-                          </div>
+                           <div className="p-3 bg-[var(--accent-gold)] text-black text-center font-bold text-sm tracking-wide uppercase">
+                             Enter Strategy
+                           </div>
                         )}
-                        {isPast && (
-                          <div className="absolute top-3 left-3">
-                            <span className="flex items-center gap-1.5 text-xs text-[var(--text-subtle)]">
-                              ✓ Complete
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Race Code */}
-                        <div className={`text-4xl font-black tracking-wide mb-3 mt-6 font-mono
-                          ${isNext ? 'text-[var(--accent-gold)]' : isPast ? 'text-[var(--text-subtle)]' : 'text-white'}
-                        `}>
-                          {raceCode}
-                        </div>
-
-                        {/* Track Mini */}
-                        <div className="h-16 mb-3">
-                          <svg viewBox="0 0 100 100" className="w-full h-full">
-                            <path 
-                              d={TRACK_PATHS[raceCode] || TRACK_PATHS.GP}
-                              fill="none"
-                              stroke={isNext ? 'var(--accent-gold)' : isPast ? 'var(--text-subtle)' : 'var(--accent-cyan)'}
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              className="opacity-50 group-hover:opacity-100 transition-opacity"
-                            />
-                          </svg>
-                        </div>
-
-                        {/* Race Name */}
-                        <div className={`text-sm font-bold mb-1 truncate ${isNext ? 'text-white' : isPast ? 'text-[var(--text-muted)]' : 'text-white'}`}>
-                          {race.name}
-                        </div>
-                        
-                        {/* Circuit */}
-                        <div className="text-xs text-[var(--text-subtle)] truncate mb-3">
-                          {race.circuit}
-                          <CircuitGuide circuitName={race.circuit} />
-                        </div>
-
-                        {/* Badges */}
-                        <div className="flex items-center gap-2">
-                          {race.is_sprint_weekend && (
-                            <span className="text-xs px-2 py-0.5 rounded bg-[var(--f1-red)]/20 text-[var(--f1-red)]">Sprint</span>
-                          )}
-                          <span className="text-xs text-[var(--text-subtle)]">
-                            {new Date(race.race_time).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}
-                          </span>
-                        </div>
                       </Link>
                     );
                   })}
+
                 </div>
               </div>
             )}

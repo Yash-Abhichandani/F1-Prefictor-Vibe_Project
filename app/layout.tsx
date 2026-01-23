@@ -1,7 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Inter, Orbitron, JetBrains_Mono, Titillium_Web, Roboto_Mono } from "next/font/google";
+import { Inter, Orbitron, JetBrains_Mono, Titillium_Web, Roboto_Mono, Unbounded } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
+import Script from "next/script";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { TeamRadioProvider } from "./components/TeamRadioToast";
@@ -46,6 +47,14 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
+// The "Speed & Precision" Display Font
+const unbounded = Unbounded({
+  subsets: ["latin"],
+  variable: '--font-unbounded',
+  display: 'swap',
+  weight: ['400', '600', '700', '800', '900']
+});
+
 export const metadata: Metadata = {
   title: "F1 Apex | Telemetry Command Center",
   description: "Your pit wall command center. Predict qualifying and race results, compete with rivals, and climb the championship standings. Experience F1 like a race engineer.",
@@ -68,10 +77,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* Google AdSense Script */}
-        <script 
-          async 
+        {/* Google AdSense Script - Optimized */}
+        <Script 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2903739336841923"
           crossOrigin="anonymous"
+          strategy="afterInteractive"
         />
       </head>
       <body className={`

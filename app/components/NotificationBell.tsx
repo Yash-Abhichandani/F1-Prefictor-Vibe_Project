@@ -28,32 +28,38 @@ export default function NotificationBell() {
   const router = useRouter();
 
   const fetchNotifications = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) return; // Silently return if no session
 
-    const { data } = await supabase
-        .from("notifications")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(10);
-    
-    if (data) {
-        setNotifications(data);
-        setUnreadCount(data.filter(n => !n.is_read).length);
+      const { data } = await supabase
+          .from("notifications")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(10);
+      
+      if (data) {
+          setNotifications(data);
+          setUnreadCount(data.filter(n => !n.is_read).length);
+      }
+    } catch (err) {
+      // Silently ignore auth errors for non-logged-in users
+      console.debug("NotificationBell: No active session");
     }
   };
 
   useEffect(() => {
-    fetchNotifications();
+    // Defer fetch to prevent blocking render
+    const timer = setTimeout(() => {
+      fetchNotifications();
+    }, 100);
 
-    // Subscribe to realtime changes
+    // Subscribe to realtime changes (only works if authenticated)
     const channel = supabase
         .channel('public:notifications')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, 
             (payload) => {
-                // Should optimally verify user_id if RLS doesn't filter stream
-                // Assuming RLS might not filter broadcast, we might need manual fetch
                 fetchNotifications();
             }
         )
@@ -67,6 +73,7 @@ export default function NotificationBell() {
     document.addEventListener("mousedown", handleClickOutside);
     
     return () => {
+        clearTimeout(timer);
         channel.unsubscribe();
         document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -89,17 +96,21 @@ export default function NotificationBell() {
   };
 
   const handleMarkAllRead = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    
-    await supabase
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("user_id", user.id)
-        .eq("is_read", false);
-        
-    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-    setUnreadCount(0);
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) return;
+      
+      await supabase
+          .from("notifications")
+          .update({ is_read: true })
+          .eq("user_id", user.id)
+          .eq("is_read", false);
+          
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.debug("NotificationBell: Failed to mark all read");
+    }
   };
 
   return (

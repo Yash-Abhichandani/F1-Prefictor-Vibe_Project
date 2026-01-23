@@ -45,6 +45,7 @@ export default function MobileMenu({ isOpen, onClose, user, profile, onLogout }:
     { href: '/leagues', label: 'Leagues', icon: '👥', text: 'Join or Create' },
     { href: '/rivalries', label: 'Rivalries', icon: '⚔️', text: 'Head-to-Head' },
     { href: '/friends', label: 'Friends', icon: '👋', text: 'Social Hub' },
+    { href: '/guide', label: 'System Manual', icon: '📖', text: 'How to Play' },
   ];
 
   const navLinks = profile?.is_admin 

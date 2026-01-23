@@ -1,7 +1,7 @@
 # 🏎️ F1 Apex — Complete Codebase Documentation
 
 > **Last Updated:** January 21, 2026  
-> **Version:** 3.0 (Analytics & Engagement Release)  
+> **Version:** 3.1 (Live Telemetry Overhaul)  
 > **Status:** Production-Ready | 2026 Season  
 > **Live:** [apexpredict.live](https://apexpredict.live)
 
@@ -109,13 +109,15 @@ fl-predictor/
 │   │   │
 │   │   │  ── ANALYTICS & LIVE ──
 │   │   ├── 📂 Analytics/            # 🆕 Performance Analytics
-│   │   │   ├── AnalyticsDashboard.tsx  # Main analytics view (8KB)
-│   │   │   ├── TrendChart.tsx          # Performance over time (3KB)
-│   │   │   └── AccuracyHeatmap.tsx     # Race-by-race accuracy (3KB)
+│   │   │   ├── DriverRadar.tsx         # Hexagonal performance chart
+│   │   │   ├── AnalyticsDashboard.tsx  # Main analytics view
+│   │   │   ├── TrendChart.tsx          # Performance over time
+│   │   │   └── AccuracyHeatmap.tsx     # Race-by-race accuracy
 │   │   │
 │   │   ├── 📂 Live/                 # 🆕 Live Race Features
-│   │   │   ├── LiveTimingTower.tsx     # Simulated timing display (8KB)
-│   │   │   └── LiveTelemetry.tsx       # Real-time telemetry (5KB)
+│   │   │   ├── LiveTimingTower.tsx     # Real-time leaderboard
+│   │   │   ├── TelemetryGraph.tsx      # Speed/Input traces
+│   │   │   └── SessionStatus.tsx       # Track condition widget
 │   │   │
 │   │   ├── LiveSessionBanner.tsx    # Active session indicator (2KB)
 │   │   │
@@ -166,7 +168,9 @@ fl-predictor/
 ├── 📂 api/                          # FastAPI Backend
 │   ├── index.py                     # Vercel entry point
 │   ├── main.py                      # All endpoints (1500+ lines)
-│   ├── email_service.py             # 🆕 Resend integration (350 lines)
+│   ├── live_f1.py                   # 🆕 OpenF1 Integration
+│   ├── analytics_f1.py              # 🆕 FastF1 Integration
+│   ├── email_service.py             # Resend integration
 │   ├── scoring.py                   # Points calculation engine
 │   └── requirements.txt             # Python dependencies
 │

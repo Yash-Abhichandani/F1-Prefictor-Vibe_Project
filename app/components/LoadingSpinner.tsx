@@ -8,7 +8,7 @@ interface LoadingSpinnerProps {
 }
 
 export default function LoadingSpinner({ 
-  message = "INITIALIZING...", 
+  message = "FETCHING TELEMETRY...", 
   variant = 'f1' 
 }: LoadingSpinnerProps) {
   const [mounted, setMounted] = useState(false);
@@ -21,80 +21,62 @@ export default function LoadingSpinner({
     return (
       <div className="flex items-center justify-center gap-3">
         <div className="w-5 h-5 border-2 border-[var(--accent-gold)]/30 border-t-[var(--accent-gold)] rounded-full animate-spin" />
-        <span className="text-sm text-[var(--text-muted)]">{message}</span>
+        <span className="text-sm text-[var(--text-muted)] animate-pulse">{message}</span>
       </div>
     );
   }
 
-  // Premium F1 Silhouette Design
+  // High-Fidelity 2026 F1 Wireframe Path (Side Profile)
+  // Features: Halo, Shark Fin, Rear Wing Endplates, Floor, Nose Cone
+  const f1CarPath = "M45,85 L25,85 C20,85 15,80 15,75 L20,70 L40,65 L100,58 L140,50 L160,50 L170,42 L190,40 L300,40 L330,30 L350,30 L360,70 L350,75 L330,75 M60,65 L80,62 L100,60 M140,50 L155,38 L170,50 M175,42 L175,25 L220,25 L220,40 M330,30 L330,15 L360,18 L360,30 M65,85 A14,14 0 1,1 93,85 A14,14 0 1,1 65,85 M280,85 A15,15 0 1,1 310,85 A15,15 0 1,1 280,85 M190,40 L260,35 L280,40 M195,40 C195,35 210,35 215,40";
+
   return (
     <div className="min-h-screen bg-[var(--bg-void)] flex flex-col items-center justify-center relative overflow-hidden">
       
-      {/* Speed Lines Background */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        {mounted && [...Array(20)].map((_, i) => (
-          <div 
-            key={i}
-            className="absolute bg-gradient-to-b from-transparent via-[var(--accent-cyan)] to-transparent w-[1px] h-[30%] animate-speed-lines"
-            style={{
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${0.2 + Math.random() * 0.5}s`,
-              opacity: Math.random() * 0.5
-            }}
-          />
-        ))}
-      </div>
+      {/* Background Grid */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
       {/* Central Content */}
-      <div className="z-10 flex flex-col items-center justify-center">
+      <div className="z-10 flex flex-col items-center justify-center w-full max-w-xl">
         
-        {/* F1 Car Silhouette */}
-        <div className="relative w-64 h-24 mb-8 animate-f1-shake">
-            {/* Motion Blur Effect behind */}
-            <div className="absolute inset-0 bg-[var(--f1-red)] blur-xl opacity-20 translate-y-2 scale-90"></div>
-            
-            <svg viewBox="0 0 400 120" className="w-full h-full drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-                <defs>
-                    <linearGradient id="carGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#333" />
-                        <stop offset="50%" stopColor="#FFF" />
-                        <stop offset="100%" stopColor="#333" />
-                    </linearGradient>
-                </defs>
-                {/* Simplified F1 Car Silhouette */}
+        {/* The Aero Scan Container */}
+        <div className="relative w-96 h-32 mb-8">
+            {/* Inactive Wireframe (Base Layer - Ghost) */}
+            <svg viewBox="0 0 400 120" className="absolute inset-0 w-full h-full opacity-10">
                 <path 
-                    d="M360,80 L340,50 L280,50 L260,30 L160,30 L150,50 L100,50 L50,60 L20,80 H360 Z M70,80 A15,15 0 0,0 100,80 A15,15 0 0,0 70,80 M290,80 A16,16 0 0,0 322,80 A16,16 0 0,0 290,80" 
+                    d={f1CarPath}
                     fill="none" 
-                    stroke="url(#carGradient)" 
-                    strokeWidth="3"
-                    strokeLinecap="round"
+                    stroke="white" 
+                    strokeWidth="1.5" 
+                    strokeLinecap="round" 
                     strokeLinejoin="round"
-                    className="drop-shadow-lg"
-                />
-                <path 
-                    d="M380,85 H20" 
-                    stroke="var(--f1-red)" 
-                    strokeWidth="4" 
-                    strokeLinecap="round"
-                    className="opacity-60"
                 />
             </svg>
-            
-            {/* Spinning Wheels Effect */}
-             <div className="absolute left-[18%] bottom-[15%] w-8 h-8 rounded-full border-2 border-white/50 border-t-white animate-spin [animation-duration:0.2s]"></div>
-             <div className="absolute right-[20%] bottom-[15%] w-9 h-9 rounded-full border-2 border-white/50 border-t-white animate-spin [animation-duration:0.2s]"></div>
+
+            {/* Active Wireframe (Scanned Layer - Red) */}
+            {/* We use a masking div that slides across to reveal this layer */}
+            <div className="absolute inset-0 w-full h-full animate-scan-reveal">
+                <svg viewBox="0 0 400 120" className="w-full h-full drop-shadow-[0_0_8px_rgba(255,24,1,0.8)]">
+                    <path 
+                        d={f1CarPath}
+                        fill="none" 
+                        stroke="var(--f1-red)" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            </div>
+
+            {/* The Scan Line (Laser) - Synced with the mask */}
+            <div className="absolute top-0 bottom-0 w-[2px] bg-gradient-to-b from-transparent via-[var(--f1-red)] to-transparent blur-[1px] animate-scan-slide shadow-[0_0_15px_var(--f1-red)] hue-rotate-0"></div>
         </div>
 
-        {/* Loading Bar */}
-        <div className="w-64 h-1 bg-gray-800 rounded-full overflow-hidden mb-4 border border-gray-700">
-          <div className="h-full bg-gradient-to-r from-[var(--f1-red)] via-[var(--accent-gold)] to-[var(--accent-cyan)] w-full animate-[shimmer_1.5s_infinite_linear] origin-left" style={{ backgroundSize: '200% 100%' }}></div>
+        {/* Text Update */}
+        <div className="text-[var(--f1-red)] font-mono font-bold tracking-[0.2em] text-sm uppercase flex items-center gap-1">
+          <span className="animate-[pulse_2s_infinite]">FETCHING TELEMETRY</span>
+          <span className="animate-pulse">_</span>
         </div>
-
-        {/* Message */}
-        <p className="text-[var(--accent-cyan)] font-orbitron font-bold tracking-[0.3em] text-sm uppercase animate-pulse">
-          {message}
-        </p>
 
       </div>
     </div>

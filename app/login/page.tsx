@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { TEAM_COLORS, ALL_DRIVERS_NAMES, DRIVERS_DATA_2026 } from "../lib/drivers";
+import AmbientNumberBg from "../components/AmbientNumberBg";
 
 type AuthMode = "signin" | "signup" | "magic-link" | "forgot-password";
 
@@ -262,217 +263,290 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-void)] p-4 relative overflow-hidden">
-      {/* Racing stripes */}
-      <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-[var(--f1-red)] via-[var(--f1-red)]/50 to-transparent" />
-      <div className="absolute top-0 right-0 w-2 h-full bg-gradient-to-b from-[var(--accent-gold)] via-[var(--accent-gold)]/50 to-transparent" />
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-void)] p-4 relative overflow-hidden font-mono selection:bg-[var(--accent-cyan)] selection:text-black">
+      {/* Ambient Number Background - F1 Branding */}
+      <AmbientNumberBg number="F1" color="#FF1801" opacity={12} />
       
-      {/* Ambient glows */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--f1-red)] rounded-full blur-[200px] opacity-10" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[var(--accent-cyan)] rounded-full blur-[200px] opacity-10" />
+      {/* Background Elements (Wind Tunnel Visibility) */}
+      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[var(--f1-red)] opacity-[0.04] blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[var(--accent-cyan)] opacity-[0.03] blur-[100px] rounded-full -translate-x-1/3 translate-y-1/3 pointer-events-none"></div>
 
       <div className="relative z-10 w-full max-w-md">
-        {/* Card */}
-        <div className="glass-card p-8 md:p-10">
+        {/* Security Gate Card */}
+        {/* Dynamic Border Color based on Team */}
+        <div 
+           className="relative backdrop-blur-xl bg-[rgba(15,17,21,0.6)] border p-8 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden transition-colors duration-500 glass-card-auth"
+           style={{ 
+             borderColor: favTeam && TEAM_COLORS[favTeam as keyof typeof TEAM_COLORS] 
+               ? TEAM_COLORS[favTeam as keyof typeof TEAM_COLORS] 
+               : 'rgba(255,255,255,0.1)'
+           }}
+        >
           
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <Link href="/" className="inline-block">
-              <h2 className="text-3xl font-black text-white font-orbitron tracking-tight">
+          {/* Chamfered Corners (CSS mask or clip-path is tricky with border, so using pseudo-elements or specific border-radius) */}
+          {/* We'll use specific border radius to simulate the cut: Top-Right & Bottom-Left */}
+          <div className="absolute inset-0 pointer-events-none border border-white/5 rounded-tr-[30px] rounded-bl-[30px]"></div>
+          {/* Override the main container radius effectively */}
+
+          
+          {/* Corner Brackets (Decorators) */}
+          <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[var(--accent-cyan)] opacity-50"></div>
+          <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[var(--f1-red)] opacity-50 rounded-tr-[28px]"></div>
+          <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[var(--f1-red)] opacity-50 rounded-bl-[28px]"></div>
+          <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[var(--accent-cyan)] opacity-50"></div>
+
+          {/* Logo Block */}
+          <div className="text-center mb-10 relative z-10">
+            <Link href="/" className="inline-block group">
+              <h2 className="text-2xl font-black text-white font-orbitron tracking-tight group-hover:tracking-widest transition-all duration-300">
                 F1 <span className="text-[var(--f1-red)]">APEX</span>
               </h2>
+              <div className="h-0.5 w-0 group-hover:w-full bg-[var(--accent-gold)] transition-all duration-300 mx-auto mt-1"></div>
             </Link>
           </div>
 
           {/* Message */}
           {message && (
-            <div className={`mb-6 p-4 rounded-xl text-sm flex items-start gap-3 ${
+            <div className={`mb-8 p-4 text-xs font-mono uppercase tracking-wide border-l-2 ${
               message.type === "success"
-                ? "bg-[rgba(16,185,129,0.12)] border border-[var(--status-success)]/30 text-[var(--status-success)]"
-                : "bg-[var(--f1-red-dim)] border border-[var(--f1-red)]/30 text-[var(--f1-red)]"
+                ? "bg-[rgba(16,185,129,0.1)] border-[var(--status-success)] text-[var(--status-success)]"
+                : "bg-[rgba(255,24,1,0.1)] border-[var(--f1-red)] text-[var(--f1-red)]"
             }`}>
-              <span>{message.type === "success" ? "✓" : "✕"}</span>
-              <span>{message.text}</span>
+              <span className="mr-2 font-bold">{message.type === "success" ? "[SUCCESS]" : "[ERROR]"}</span>
+              {message.text}
             </div>
           )}
 
           {/* Form Content */}
+          <div className="relative z-10">
           {authMode === "magic-link" ? (
             <>
-              <h1 className="text-2xl font-bold text-center text-white mb-2">Magic Link</h1>
-              <p className="text-[var(--text-muted)] text-center text-sm mb-8">Sign in without a password</p>
+              <h1 className="text-3xl font-black text-white mb-2 italic uppercase font-display tracking-tighter">SECURE UPLINK</h1>
+              <p className="text-[var(--text-muted)] text-xs font-mono mb-8 uppercase tracking-widest">// Passkey Verification</p>
               
-              <input
-                type="email"
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); clearMessage(); }}
-                className="w-full mb-4"
-              />
+              <div className="mb-6">
+                 <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-[0.15em] mb-2 font-bold">CONTACT_CHANNEL</label>
+                 <input
+                  type="email"
+                  placeholder="USER_ID / EMAIL"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); clearMessage(); }}
+                  className="w-full bg-[#1A1D21] border border-[#333] text-white p-4 text-sm font-mono focus:outline-none focus:border-[var(--accent-cyan)] focus:shadow-[0_0_15px_rgba(0,212,255,0.2)] transition-all placeholder:text-white/20 rounded-none"
+                />
+              </div>
               
-              <button onClick={handleMagicLink} disabled={loading} className="w-full btn-primary py-4 mb-4">
-                {loading ? "Sending..." : "✨ Send Magic Link"}
+              <button onClick={handleMagicLink} disabled={loading} className="w-full bg-[var(--accent-cyan)] hover:bg-[#33ddff] text-black font-bold py-4 text-sm font-mono uppercase tracking-widest transition-all hover:translate-x-1 hover:-translate-y-1 shadow-[4px_4px_0px_rgba(255,255,255,0.1)] active:shadow-none active:translate-x-0 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed mb-4 flex items-center justify-center gap-2">
+                 <span className="text-lg">⚡</span> {loading ? "TRANSMITTING..." : "TRANSMIT ACCESS CODE"}
               </button>
               
-              <button onClick={() => { setAuthMode("signin"); clearMessage(); }} className="w-full text-sm text-[var(--text-muted)] hover:text-white transition">
-                ← Back to Sign In
+              <button onClick={() => { setAuthMode("signin"); clearMessage(); }} className="w-full text-xs text-[var(--text-muted)] hover:text-[var(--accent-cyan)] font-mono uppercase tracking-wider transition-colors text-center block mt-4">
+                [ ABORT SEQUENCE ]
               </button>
             </>
           ) : authMode === "forgot-password" ? (
             <>
-              <h1 className="text-2xl font-bold text-center text-white mb-2">Reset Password</h1>
-              <p className="text-[var(--text-muted)] text-center text-sm mb-8">We'll email you a reset link</p>
+              <h1 className="text-3xl font-black text-white mb-2 italic uppercase font-display tracking-tighter">CREDENTIAL RESET</h1>
+              <p className="text-[var(--text-muted)] text-xs font-mono mb-8 uppercase tracking-widest">// RECOVER ACCESS</p>
               
-              <input
-                type="email"
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); clearMessage(); }}
-                className="w-full mb-4"
-              />
+              <div className="mb-6">
+                 <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-[0.15em] mb-2 font-bold">RECOVERY_EMAIL</label>
+                 <input
+                  type="email"
+                  placeholder="USER_ID / EMAIL"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); clearMessage(); }}
+                  className="w-full bg-[#1A1D21] border border-[#333] text-white p-4 text-sm font-mono focus:outline-none focus:border-[var(--accent-cyan)] focus:shadow-[0_0_15px_rgba(0,212,255,0.2)] transition-all placeholder:text-white/20 rounded-none"
+                />
+              </div>
               
-              <button onClick={handleForgotPassword} disabled={loading} className="w-full btn-teal py-4 mb-4">
-                {loading ? "Sending..." : "🔐 Send Reset Link"}
+              <button onClick={handleForgotPassword} disabled={loading} className="w-full bg-[var(--f1-red)] hover:bg-[var(--f1-red-bright)] text-white font-bold py-4 text-sm font-mono uppercase tracking-widest transition-all hover:shadow-[0_0_20px_rgba(255,24,1,0.4)] disabled:opacity-50 disabled:cursor-not-allowed mb-4">
+                {loading ? "TRANSMITTING..." : "SEND RECOVERY PACKET"}
               </button>
               
-              <button onClick={() => { setAuthMode("signin"); clearMessage(); }} className="w-full text-sm text-[var(--text-muted)] hover:text-white transition">
-                ← Back to Sign In
+              <button onClick={() => { setAuthMode("signin"); clearMessage(); }} className="w-full text-xs text-[var(--text-muted)] hover:text-white font-mono uppercase tracking-wider transition-colors text-center block mt-4">
+                [ CANCEL OPERATION ]
               </button>
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-center text-white mb-2">
-                {authMode === "signup" ? "Join the Grid" : "Welcome Back"}
+              <h1 className="text-3xl font-black text-white mb-2 italic uppercase font-display tracking-tighter leading-none">
+                {authMode === "signup" ? "NEW LICENSE APPLICATION" : "AUTHENTICATION REQUIRED"}
               </h1>
-              <p className="text-[var(--text-muted)] text-center text-sm mb-8">
-                {authMode === "signup" ? "Create your predictor profile" : "Sign in to continue racing"}
+              <p className="text-[var(--text-muted)] text-xs font-mono mb-8 uppercase tracking-widest">
+                {authMode === "signup" ? "// REGISTER NEW DRIVER PROFILE" : "// ESTABLISH SECURE UPLINK"}
               </p>
               
               {authMode === "signup" && (
                 <>
-                  <input
-                    type="text"
-                    placeholder="Choose Username"
-                    value={username}
-                    onChange={(e) => { setUsername(e.target.value); clearMessage(); }}
-                    className="w-full mb-4"
-                  />
+                  <div className="mb-4">
+                    <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-[0.15em] mb-2 font-bold">CALLSIGN</label>
+                    <input
+                      type="text"
+                      placeholder="SELECT USERNAME"
+                      value={username}
+                      onChange={(e) => { setUsername(e.target.value); clearMessage(); }}
+                      className="w-full bg-[#1A1D21] border border-[#333] text-white p-4 text-sm font-mono focus:outline-none focus:border-[var(--accent-cyan)] focus:shadow-[0_0_15px_rgba(0,212,255,0.2)] transition-all placeholder:text-white/20 rounded-none"
+                    />
+                  </div>
                   
                   {/* Personalization Fields */}
-                  <div className="flex gap-2 mb-4">
-                    <select
-                      value={favTeam}
-                      onChange={(e) => { setFavTeam(e.target.value); clearMessage(); }}
-                      className="flex-1 bg-[var(--bg-onyx)] border border-[var(--glass-border)] rounded-lg p-3 text-white text-sm focus:outline-none focus:border-[var(--accent-gold)] appearance-none"
-                    >
-                      <option value="">Select Team...</option>
-                      {Object.keys(TEAM_COLORS).map(team => (
-                        <option key={team} value={team}>{team}</option>
-                      ))}
-                    </select>
+                  <div className="flex flex-col md:flex-row gap-4 mb-4">
+                    <div className="flex-1">
+                        <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-[0.15em] mb-2 font-bold">CONSTRUCTOR</label>
+                        <select
+                          value={favTeam}
+                          onChange={(e) => { setFavTeam(e.target.value); clearMessage(); }}
+                          className="w-full bg-[#1A1D21] border border-[#333] text-white p-4 text-sm font-mono focus:outline-none focus:border-[var(--accent-gold)] appearance-none rounded-none uppercase cursor-pointer hover:bg-[#222]"
+                        >
+                          <option value="">SELECT TEAM...</option>
+                          {Object.keys(TEAM_COLORS).map(team => (
+                            <option key={team} value={team}>{team.toUpperCase()}</option>
+                          ))}
+                        </select>
+                    </div>
                     
-                    <select
-                      value={favDriver}
-                      onChange={(e) => setFavDriver(e.target.value)}
-                      className="flex-1 bg-[var(--bg-onyx)] border border-[var(--glass-border)] rounded-lg p-3 text-white text-sm focus:outline-none focus:border-[var(--accent-gold)] appearance-none"
-                    >
-                      <option value="">Select Driver...</option>
-                      {DRIVERS_DATA_2026.map(d => (
-                        <option key={d.name} value={d.name}>{d.name} #{d.number}</option>
-                      ))}
-                    </select>
+                    <div className="flex-1">
+                        <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-[0.15em] mb-2 font-bold">DRIVER_ID</label>
+                        <select
+                          value={favDriver}
+                          onChange={(e) => setFavDriver(e.target.value)}
+                          className="w-full bg-[#1A1D21] border border-[#333] text-white p-4 text-sm font-mono focus:outline-none focus:border-[var(--accent-gold)] appearance-none rounded-none uppercase cursor-pointer hover:bg-[#222]"
+                        >
+                          <option value="">SELECT DRIVER...</option>
+                          {DRIVERS_DATA_2026.map(d => (
+                            <option key={d.name} value={d.name}>{d.name.toUpperCase()} #{d.number}</option>
+                          ))}
+                        </select>
+                    </div>
                   </div>
                 </>
               )}
               
-              <input
-                type="email"
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); clearMessage(); }}
-                className="w-full mb-4"
-              />
-              
-              <div className="relative mb-2">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); clearMessage(); }}
-                  className="w-full pr-12"
+              <div className="mb-4">
+                 <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-[0.15em] mb-2 font-bold">USER_ID / EMAIL</label>
+                 <input
+                  type="email"
+                  placeholder="ENTER CREDENTIALS"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); clearMessage(); }}
+                  className="w-full bg-[#1A1D21] border border-[#333] text-white p-4 text-sm font-mono focus:outline-none focus:border-[var(--accent-cyan)] focus:shadow-[0_0_15px_rgba(0,212,255,0.2)] transition-all placeholder:text-white/20 rounded-none"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-white"
-                >
-                  {showPassword ? "🙈" : "👁️"}
-                </button>
+              </div>
+              
+              <div className="relative mb-6">
+                <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-[0.15em] mb-2 font-bold">ACCESS_KEY</label>
+                <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => { setPassword(e.target.value); clearMessage(); }}
+                      className="w-full bg-[#1A1D21] border border-[#333] text-white p-4 text-sm font-mono focus:outline-none focus:border-[var(--accent-cyan)] focus:shadow-[0_0_15px_rgba(0,212,255,0.2)] transition-all placeholder:text-white/20 rounded-none pr-12"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--accent-cyan)] text-xs uppercase font-bold tracking-wider"
+                    >
+                      {showPassword ? "HIDE" : "SHOW"}
+                    </button>
+                </div>
               </div>
               
               {/* Password Strength */}
               {authMode === "signup" && password && (
-                <div className="mb-4">
-                  <div className="flex gap-1 mb-1">
+                <div className="mb-6">
+                  <div className="flex gap-1 mb-2 h-1 bg-[#111]">
                     {[1, 2, 3, 4].map((level) => (
-                      <div key={level} className={`h-1 flex-1 rounded ${level <= passwordStrength.level ? passwordStrength.color : "bg-[var(--bg-graphite)]"}`} />
+                      <div key={level} className={`flex-1 transition-all duration-300 ${level <= passwordStrength.level ? passwordStrength.color : "bg-transparent"}`} />
                     ))}
                   </div>
-                  <p className="text-xs text-[var(--text-muted)]">{passwordStrength.text}</p>
+                  <div className="flex justify-between text-[10px] uppercase font-mono tracking-wider">
+                      <span className="text-[var(--text-muted)]">SECURITY_LEVEL:</span>
+                      <span style={{ color: passwordStrength.level >= 3 ? 'var(--status-success)' : 'var(--text-muted)' }}>{passwordStrength.text}</span>
+                  </div>
                 </div>
               )}
               
               {authMode === "signin" && (
-                <div className="text-right mb-4">
-                  <button onClick={() => { setAuthMode("forgot-password"); clearMessage(); }} className="text-sm text-[var(--text-subtle)] hover:text-[var(--accent-cyan)]">
-                    Forgot Password?
+                <div className="text-right mb-6">
+                  <button onClick={() => { setAuthMode("forgot-password"); clearMessage(); }} className="text-[10px] md:text-xs text-[var(--text-subtle)] hover:text-[var(--accent-cyan)] uppercase tracking-widest font-mono transition-colors">
+                    [ LOST CREDENTIALS? ]
                   </button>
                 </div>
               )}
               
-              {authMode === "signup" && <div className="mb-4" />}
-              
               <button
                 onClick={authMode === "signup" ? handleSignUp : handleSignIn}
                 disabled={loading}
-                className="w-full bg-[var(--f1-red)] hover:bg-[var(--f1-red-bright)] text-white font-bold py-4 rounded-xl transition shadow-[var(--shadow-glow-red)] mb-4 uppercase tracking-wider"
+                className={`w-full font-bold py-4 text-sm font-mono uppercase tracking-[0.2em] transition-all hover:translate-x-1 hover:-translate-y-1 shadow-[4px_4px_0px_rgba(255,255,255,0.1)] active:shadow-none active:translate-x-0 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed mb-6 border border-transparent ${
+                   authMode === "signup" 
+                     ? "bg-[var(--accent-gold)] hover:bg-[#ffdb70] text-black" 
+                     : "bg-[var(--f1-red)] hover:bg-[#ff3333] text-white"
+                }`}
               >
-                {loading ? "Loading..." : authMode === "signup" ? "Create Account" : "Sign In"}
+                {loading ? "PROCESSING..." : authMode === "signup" ? "APPLY FOR LICENSE" : "INITIATE SESSION"}
               </button>
               
-              <div className="relative my-6">
+              <div className="relative my-8">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[var(--glass-border)]" />
+                  <div className="w-full border-t border-white/5" />
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-[var(--bg-onyx)] px-4 text-[var(--text-subtle)]">or</span>
+                <div className="relative flex justify-center text-[10px] uppercase font-mono">
+                  <span className="bg-[#131518] px-2 text-[var(--text-subtle)] tracking-widest">ALTERNATE ACCESS</span>
                 </div>
               </div>
               
-              <button onClick={() => { setAuthMode("magic-link"); clearMessage(); }} className="w-full btn-ghost py-3 border border-[var(--glass-border)] hover:border-[var(--accent-gold)]/50 mb-4 text-sm">
-                ✨ Magic Link (No Password)
+              <button onClick={() => { setAuthMode("magic-link"); clearMessage(); }} className="w-full btn-ghost py-3 border border-white/10 hover:border-[var(--accent-cyan)] hover:text-[var(--accent-cyan)] mb-4 text-xs font-mono uppercase tracking-widest transition-all">
+                KEYLESS ENTRY (MAGIC LINK)
               </button>
+
+              <div className="text-center mb-4">
+                 <Link href="/guide" className="text-[10px] text-[var(--accent-gold)] hover:text-white font-mono uppercase tracking-[0.2em] border-b border-[var(--accent-gold)]/30 hover:border-white transition-all pb-0.5">
+                    [ REVIEW SYSTEM PROTOCOLS ]
+                 </Link>
+              </div>
               
-              <div className="text-center text-sm text-[var(--text-muted)]">
-                {authMode === "signup" ? "Already have an account? " : "Don't have an account? "}
+              <div className="text-center mt-8 pt-6 border-t border-white/5">
                 <button 
                   onClick={() => { setAuthMode(authMode === "signup" ? "signin" : "signup"); clearMessage(); }}
-                  className="text-[var(--accent-gold)] hover:text-white font-bold"
+                  className="text-xs font-mono uppercase tracking-wider text-[var(--text-muted)] hover:text-white transition-colors group"
                 >
-                  {authMode === "signup" ? "Sign In" : "Sign Up"}
+                  {authMode === "signup" ? "Already have clearance? " : "Need a license? "}
+                  <span className="text-[var(--accent-gold)] group-hover:underline ml-2">
+                    {authMode === "signup" ? "LOGIN" : "REGISTER"}
+                  </span>
                 </button>
               </div>
             </>
           )}
+          </div>
         </div>
 
         {/* Back to Home */}
-        <div className="mt-6 text-center">
-          <Link href="/" className="text-xs text-[var(--text-subtle)] hover:text-[var(--text-muted)] transition">
-            ← Back to Home
+        <div className="mt-8 text-center opacity-50 hover:opacity-100 transition-opacity">
+          <Link href="/" className="text-[10px] text-[var(--text-subtle)] hover:text-white font-mono uppercase tracking-[0.3em]">
+            [ ABORT TO HOME ]
           </Link>
         </div>
       </div>
+      
+      {/* CSS for Chamfered Card */}
+      <style jsx global>{`
+        .glass-card-auth {
+          border-top-right-radius: 30px;
+          border-bottom-left-radius: 30px;
+        }
+        .chamfered-card {
+           clip-path: polygon(
+             0 0, 
+             100% 0, 
+             100% calc(100% - 30px), 
+             calc(100% - 30px) 100%, 
+             0 100%
+           );
+        }
+      `}</style>
     </div>
   );
 }
